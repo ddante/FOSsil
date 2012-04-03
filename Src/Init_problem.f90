@@ -1,7 +1,7 @@
 MODULE init_problem
 
   USE Geometry,       ONLY: N_dofs, elements,  N_elements
-!!$  USE Models,         ONLY: strong_bc, exact_solution
+  USE Models,         ONLY: strong_bc
 
   IMPLICIT NONE
 
@@ -53,7 +53,7 @@ CONTAINS
       
       uu = 0.d0;  rhs = 0.d0
 
-!      CALL strong_bc(pb_type, visc, uu, rhs)
+      CALL strong_bc(pb_type, visc, uu, rhs)
 
       ! Delete a possible previous convergence history...
       UNIT = 4

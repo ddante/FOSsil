@@ -2,13 +2,11 @@ MODULE Post_pro
 
   USE Element_Class
 
-  USE init_problem,  ONLY : pb_name, order, pb_type, visc, is_visc
+  USE init_problem,  ONLY : pb_name, order, pb_type, visc
 
   USE geometry,      ONLY : N_dim, N_elements, N_dofs, elements
 
   USE models,        ONLY : exact_solution, exact_grad
-
-  USE Gradient_Reconstruction
 
   USE Quadrature_rules,  ONLY : Int_d
 
@@ -32,7 +30,7 @@ CONTAINS
 
     IMPLICIT NONE
 
-    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: uu
+    REAL(KIND=8), DIMENSION(:,:), INTENT(IN) :: uu
     !------------------------------------------------------
 
     INTEGER, PARAMETER               :: TRI = 1, QUA = 2
@@ -133,7 +131,7 @@ CONTAINS
 
                  uu_ex = exact_solution(pb_type, coord(:, j), visc)
 
-                 WRITE(UNIT, 200) coord(:, j), uu(j), uu_ex
+                 WRITE(UNIT, 200) coord(:, j), uu(1,j), uu_ex
 
               ENDIF
 
@@ -232,7 +230,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      REAL(KIND=8), DIMENSION(:), INTENT(IN)  :: uu      
+      REAL(KIND=8), DIMENSION(:,:), INTENT(IN)  :: uu
       !---------------------------------------------
 
       REAL(KIND=8), DIMENSION(:), ALLOCATABLE :: uu_ex
@@ -260,7 +258,7 @@ CONTAINS
 
          ENDDO
 
-         err_ele = uu(elements(je)%p%NU) - uu_ex
+         err_ele = uu(1, elements(je)%p%NU) - uu_ex
          
          !----------
          ! L_2 error
@@ -272,7 +270,7 @@ CONTAINS
          ! L_oo error
          !-------------------------------------
          err_Loo = MAX( err_Loo, &
-                        MAXVAL(ABS(uu(elements(je)%p%NU) - uu_ex)) )
+                        MAXVAL(ABS(uu(1, elements(je)%p%NU) - uu_ex)) )
 
          DEALLOCATE( uu_ex, err_ele )
 
@@ -282,20 +280,17 @@ CONTAINS
       err_L2 = SQRT(err_L2) / SQRT(int_uex)
 
       ! Error of the gradients
-      IF( is_visc ) THEN
-         CALL compute_gradient_error(uu, err_Gx_L2, err_Gy_L2)
-      ENDIF        
+
+      CALL compute_gradient_error(uu, err_Gx_L2, err_Gy_L2)
 
       WRITE(*,*) ' *** COMPUTE THE ERROR ***'
             
       WRITE(*,*) 'N. dof, err L2, err_Loo'
       WRITE(*,22) N_dofs, err_L2, err_Loo
 
-      IF( is_visc ) THEN
-         WRITE(*,*) 'L2 error of the gradients: E_G_x, E_G_y'
-         WRITE(*,23) err_Gx_L2, err_Gy_L2
-      ENDIF
-
+      WRITE(*,*) 'L2 error of the gradients: E_G_x, E_G_y'
+      WRITE(*,23) err_Gx_L2, err_Gy_L2
+      
       UNIT = 9
       
       OPEN(UNIT, FILE = 'error.'//TRIM(ADJUSTL(pb_name)), &
@@ -311,11 +306,9 @@ CONTAINS
       WRITE(UNIT, *) 'N. dof, err L2, err_Loo'
       WRITE(UNIT,22)  N_dofs, err_L2, err_Loo
 
-      IF( is_visc ) THEN
-         WRITE(UNIT, *) 'L2 error of the gradients: E_G_x, E_G_y'
-         WRITE(UNIT,23)  err_Gx_L2, err_Gy_L2
-      ENDIF
-
+      WRITE(UNIT, *) 'L2 error of the gradients: E_G_x, E_G_y'
+      WRITE(UNIT,23)  err_Gx_L2, err_Gy_L2
+      
       CLOSE(UNIT)
       
 22 FORMAT(I6, 2(1x,e24.16))
@@ -330,12 +323,10 @@ CONTAINS
 
       IMPLICIT NONE
 
-      REAL(KIND=8), DIMENSION(:), INTENT(IN)  :: uu
-      REAL(KIND=8),               INTENT(OUT) :: err_Gx_L2
-      REAL(KIND=8),               INTENT(OUT) :: err_Gy_L2
+      REAL(KIND=8), DIMENSION(:,:), INTENT(IN)  :: uu
+      REAL(KIND=8),                 INTENT(OUT) :: err_Gx_L2
+      REAL(KIND=8),                 INTENT(OUT) :: err_Gy_L2
       !-------------------------------------------------
-
-      REAL(KIND=8), DIMENSION(:,:), ALLOCATABLE :: D_uu
 
       REAL(KIND=8), DIMENSION(2) :: D_u_ex
 
@@ -350,10 +341,6 @@ CONTAINS
       err_Gx_L2 = 0.d0;  err_Gy_L2 = 0.d0
       int_d2_x = 0.d0;   int_d2_y = 0.d0
 
-      ALLOCATE( D_uu(2, SIZE(uu)) )
-
-      D_uu = Compute_gradient(uu)
-
       DO je = 1, N_elements
 
          ALLOCATE( err2_x(elements(je)%p%N_points), &
@@ -367,8 +354,8 @@ CONTAINS
                                 elements(je)%p%coords(:, k), &
                                 visc )         
 
-            err2_x(k) = ( D_uu(1, elements(je)%p%NU(k)) - D_u_ex(1) )**2
-            err2_y(k) = ( D_uu(2, elements(je)%p%NU(k)) - D_u_ex(2) )**2
+            err2_x(k) = ( uu(2, elements(je)%p%NU(k)) - D_u_ex(1) )**2
+            err2_y(k) = ( uu(3, elements(je)%p%NU(k)) - D_u_ex(2) )**2
 
             d2_x(k) = D_u_ex(1)**2
             d2_y(k) = D_u_ex(2)**2
@@ -387,8 +374,6 @@ CONTAINS
     
       err_Gx_L2 = DSQRT(err_Gx_L2)/DSQRT(int_d2_x)
       err_Gy_L2 = DSQRT(err_Gy_L2)/DSQRT(int_d2_y)
-
-      DEALLOCATE( D_uu )
 
     END SUBROUTINE compute_gradient_error
     !====================================    

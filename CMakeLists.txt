@@ -22,22 +22,31 @@ SET(QUADRATURE_FILES
 )
 
 
+SET(SCHEME_FILES
+  Src/Schemes/Num_Scheme.f90
+  Src/Schemes/LDA_method.f90
+)
+
 SET(MAIN_FILES 
   Src/Init_problem.f90
   Src/Models.f90
   Src/FOS_system.f90
   Src/Geometry.f90
   Src/Time_integration.f90
+  Src/Space_integration.f90
   Src/Main.f90
+  Src/Post_pro.f90
 )
 
 SET(SOURCES
   ${ELEMENT_FILES}
   ${ALGEBRA_FILES}
   ${QUADRATURE_FILES}
+  ${SCHEME_FILES}
   ${MAIN_FILES}
 )
 
 ADD_EXECUTABLE(solver.exe ${SOURCES})
 
 SET_TARGET_PROPERTIES(solver.exe  PROPERTIES COMPILE_FLAGS "-r8 -O5 -warn all")
+#SET_TARGET_PROPERTIES(solver.exe  PROPERTIES COMPILE_FLAGS "-C -check uninit -ftrapuv -fpe0 -check noarg_temp_created -warn all")

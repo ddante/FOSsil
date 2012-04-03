@@ -1,7 +1,7 @@
 MODULE FOS_system
   
   USE geometry, ONLY: N_dim
-  USE models,   ONLY: advection_speed
+  USE models,   ONLY: advection_speed, source_term
 
   IMPLICIT NONE
 
@@ -9,7 +9,9 @@ MODULE FOS_system
 
   REAL(KIND=8), PARAMETER :: PI = DACOS(-1.d0)
 
-  PUBLIC :: FOS_advection_flux
+  PUBLIC :: FOS_advection_flux, FOS_source, &
+            FOS_eigenvalues, FOS_right_eigenvectors, &
+            FOS_left_eigenvectors
 
 CONTAINS
 
@@ -35,9 +37,9 @@ CONTAINS
     u = uu(1); p = uu(2); q = uu(3)
 
     a = advection_speed(type_pb, u, x, y)
+    mod_a = SQRT(SUM(a**2))
     
     LR = FOS_Characteristic_length(a, nu)
-    
     TR = LR/(mod_a + nu/LR)
     
     ff(1, :) = (/  a(1)*u - nu*p,  a(2)*u - nu*q /)
@@ -47,27 +49,39 @@ CONTAINS
   END FUNCTION FOS_advection_flux
   !==============================
 
-  !==================================================
-  FUNCTION FOS_Characteristic_length(a, nu) RESULT(L)
-  !==================================================
+  !====================================================
+  FUNCTION FOS_source(type_pb, uu, nu, x, y) RESULT(SS)
+  !====================================================
 
     IMPLICIT NONE
-
-    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: a
-    REAL(KIND=8),               INTENT(IN) :: nu
-
-    REAL(KIND=8) :: L
-    !-------------------------------------------
-    REAL(KIND=8) :: Re_pi
-    !-------------------------------------------
-
-    Re_pi = SQRT(SUM(a**2)) / (nu * Pi)
     
-    L = ( (RE_pi/( DSQRT(1.d0 + Re_pi**2) + 1.d0 )) + &
-          (DSQRT(1.d0 + 2.d0/( DSQRT(1.d0 + Re_pi**2) +1.d0))) ) / (2.d0*PI)
+    INTEGER,                    INTENT(IN) :: type_pb
+    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: uu
+    REAL(KIND=8),               INTENT(IN) :: nu
+    REAL(KIND=8),               INTENT(IN) :: x, y
+    
+    REAL(KIND=8), DIMENSION(SIZE(uu)) :: SS
+    !---------------------------------------------
 
-  END FUNCTION FOS_Characteristic_length
-  !=====================================
+    REAL(KIND=8), DIMENSION(N_dim) :: a
+
+    REAL(KIND=8) :: u, p, q, TR, LR, mod_a
+    !---------------------------------------------
+
+    u = uu(1); p = uu(2); q = uu(3)
+
+    a = advection_speed(type_pb, u, x, y)
+    mod_a = SQRT(SUM(a**2))
+
+    LR = FOS_Characteristic_length(a, nu)
+    TR = LR/(mod_a + nu/LR)
+
+    SS(1) = source_term(type_pb, u, nu, x, y)    
+    SS(2) = -p/TR
+    SS(3) = -q/TR
+
+  END FUNCTION FOS_source
+  !======================
 
   !================================================
   FUNCTION FOS_eigenvalues(a, nu, n) RESULT(lambda)
@@ -92,11 +106,11 @@ CONTAINS
 
     LR = FOS_Characteristic_length(a, nu)
 
-    Re_m = an_m * LR / nu
-    Re_p = an_p * LR / nu
+    !Re_m = an_m * LR / nu
+    !Re_p = an_p * LR / nu
 
-    lambda(1) = an_m*(1.d0 - 1.d0/Re_m)
-    lambda(2) = an_p*(1.d0 + 1.d0/Re_p)
+    lambda(1) = an_m - nu/LR ! an_m*(1 - 1/Re_m)
+    lambda(2) = an_p + nu/LR ! an_p*(1 + 1/Re_p)
     lambda(3) = 0.d0    
 
   END FUNCTION FOS_eigenvalues
@@ -170,5 +184,28 @@ CONTAINS
 
   END FUNCTION FOS_left_eigenvectors
   !=================================
+
+  !==================================================
+  FUNCTION FOS_Characteristic_length(a, nu) RESULT(L)
+  !==================================================
+
+    IMPLICIT NONE
+
+    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: a
+    REAL(KIND=8),               INTENT(IN) :: nu
+
+    REAL(KIND=8) :: L
+    !-------------------------------------------
+    REAL(KIND=8) :: Re_pi
+    !-------------------------------------------
+
+    Re_pi = SQRT(SUM(a**2)) / (nu * Pi)
+    
+    L = ( (RE_pi/( DSQRT(1.d0 + Re_pi**2) + 1.d0 )) + &
+          (DSQRT(1.d0 + 2.d0/( DSQRT(1.d0 + Re_pi**2) +1.d0))) ) / (2.d0*PI)
+
+  END FUNCTION FOS_Characteristic_length
+  !=====================================
+
 
 END MODULE FOS_system

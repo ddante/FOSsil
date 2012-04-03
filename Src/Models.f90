@@ -1,7 +1,7 @@
 MODULE models
 
   USE geometry,      ONLY: N_dim, N_elements, elements
-
+  
   IMPLICIT NONE
 
   PRIVATE
@@ -363,17 +363,19 @@ MODULE models
    !
    IMPLICIT NONE
    
-      INTEGER,                    INTENT(IN)    :: type_pb
-      REAL(KIND=8),               INTENT(IN)    :: visc
-      REAL(KIND=8), DIMENSION(:), INTENT(INOUT) :: uu
-      REAL(KIND=8), DIMENSION(:), INTENT(INOUT) :: rhs
+      INTEGER,                      INTENT(IN)    :: type_pb
+      REAL(KIND=8),                 INTENT(IN)    :: visc
+      REAL(KIND=8), DIMENSION(:,:), INTENT(INOUT) :: uu
+      REAL(KIND=8), DIMENSION(:,:), INTENT(INOUT) :: rhs
       !======================================================
       
       INTEGER, DIMENSION(:), ALLOCATABLE :: is, is_loc
       
-      REAL(KIND=8), DIMENSION(:),   ALLOCATABLE :: u_l, rhs_l
+      REAL(KIND=8), DIMENSION(:,:), ALLOCATABLE :: u_l, rhs_l
       REAL(KIND=8), DIMENSION(:,:), ALLOCATABLE :: coord
-      
+
+      REAL(KIND=8), DIMENSION(N_dim) :: du_l
+
       INTEGER :: n_loc, Nv
       
       LOGICAL :: b_flag
@@ -385,7 +387,8 @@ MODULE models
 
          Nv = elements(jt)%p%N_points
 
-         ALLOCATE( is(Nv), is_loc(Nv), u_l(Nv), rhs_l(Nv) )
+         ALLOCATE( is(Nv), is_loc(Nv) )
+         ALLOCATE( u_l(3, Nv), rhs_l(3, Nv) )
          ALLOCATE( coord(N_dim, Nv) )
       
          is = elements(jt)%p%NU
@@ -394,58 +397,58 @@ MODULE models
             coord(i, :) = elements(jt)%p%Coords(i, :)
          ENDDO
 
-           u_l(:) =  uu(is)
-         rhs_l(:) = rhs(is)
+           u_l =  uu(:, is)
+         rhs_l = rhs(:, is)
 
           n_loc = 0
          is_loc = 0
          b_flag = .FALSE.
          
          SELECT CASE(type_pb)
-      
-         CASE(LINEAR_ADVECTION)
-      
-            CALL bc_linadv()
+!!$      
+!!$         CASE(LINEAR_ADVECTION)
+!!$      
+!!$            CALL bc_linadv()
                
-         CASE(ROTATION)
-            
-            CALL bc_rotation()
+!!$         CASE(ROTATION)
+!!$            
+!!$            CALL bc_rotation()
                
-         CASE(BURGER)
-            
-            CALL bc_burger()
+!!$         CASE(BURGER)
+!!$            
+!!$            CALL bc_burger()
                
 	 CASE(LIN_VISC_ADVEC)
 	    
 	    CALL bc_linviscadv()
 
-         CASE(SMITH_HUTTON)
-            
-            CALL bc_smithutton()
+!!$         CASE(SMITH_HUTTON)
+!!$            
+!!$            CALL bc_smithutton()
 
-         CASE(PERAIRE_ADVEC_DIFF)
+!!$         CASE(PERAIRE_ADVEC_DIFF)
+!!$
+!!$            CALL bc_peraire_advec_diff()
 
-            CALL bc_peraire_advec_diff()
+!!$         CASE(ADVECTION_SOURCE)
+!!$
+!!$            CALL bc_advection_source()
 
-         CASE(ADVECTION_SOURCE)
+!!$         CASE(MANUFACTED_SOURCE)
+!!$
+!!$            CALL bc_manufacted_source()
 
-            CALL bc_advection_source()
+!!$         CASE(TRANSPORT_REACTION)
+!!$
+!!$            CALL bc_transport_reaction()
 
-         CASE(MANUFACTED_SOURCE)
+!!$         CASE(BOUNDARY_LAYER)
+!!$
+!!$            CALL bc_boundary_layer()
 
-            CALL bc_manufacted_source()
-
-         CASE(TRANSPORT_REACTION)
-
-            CALL bc_transport_reaction()
-
-         CASE(BOUNDARY_LAYER)
-
-            CALL bc_boundary_layer()
-
-         CASE(PURE_DIFFUSION)
-
-            CALL bc_pure_diffusion()
+!!$         CASE(PURE_DIFFUSION)
+!!$
+!!$            CALL bc_pure_diffusion()
 
          CASE DEFAULT
          
@@ -458,8 +461,8 @@ MODULE models
          IF (b_flag) THEN
                
             DO i = 1, n_loc
-                uu( is(is_loc(i)) ) =   u_l( is_loc(i) )            
-               rhs( is(is_loc(i)) ) = rhs_l( is_loc(i) )
+                uu(:, is(is_loc(i))) =   u_l(:, is_loc(i))            
+               rhs(:, is(is_loc(i))) = rhs_l(:, is_loc(i))
             ENDDO
                      
          ENDIF
@@ -472,121 +475,121 @@ MODULE models
 CONTAINS
 !=======
 
-      !......................
-      SUBROUTINE bc_linadv()
-      !
-      ! Square [0,1]x[0,1]
-      !
-      IMPLICIT NONE
+!!$      !......................
+!!$      SUBROUTINE bc_linadv()
+!!$      !
+!!$      ! Square [0,1]x[0,1]
+!!$      !
+!!$      IMPLICIT NONE
+!!$
+!!$         DO k = 1, Nv
+!!$            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
+!!$                 ABS(coord(2, k)) >  0.d0) THEN
+!!$               u_l(k) = initial_profile(coord(1, k))
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.
+!!$            ENDIF
+!!$         ENDDO
+!!$          
+!!$         DO k = 1, Nv
+!!$            IF ( (ABS(coord(1, k) - 1.d0)) <= 0.d0) THEN
+!!$               u_l(k) = initial_profile(coord(1, k))
+!!$               rhs_l(k) = 0.d0              
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.             
+!!$            ENDIF            
+!!$         ENDDO
+!!$          
+!!$         DO k = 1, Nv
+!!$            IF ( ABS(coord(2, k)) <= 0.d0 ) THEN
+!!$               u_l(k) = initial_profile(coord(1, k))
+!!$               rhs_l(k) = 0.d0              
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.             
+!!$            ENDIF            
+!!$         ENDDO        
+!!$      
+!!$      END SUBROUTINE bc_linadv
+!!$      !........................
 
-         DO k = 1, Nv
-            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
-                 ABS(coord(2, k)) >  0.d0) THEN
-               u_l(k) = initial_profile(coord(1, k))
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.
-            ENDIF
-         ENDDO
-          
-         DO k = 1, Nv
-            IF ( (ABS(coord(1, k) - 1.d0)) <= 0.d0) THEN
-               u_l(k) = initial_profile(coord(1, k))
-               rhs_l(k) = 0.d0              
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.             
-            ENDIF            
-         ENDDO
-          
-         DO k = 1, Nv
-            IF ( ABS(coord(2, k)) <= 0.d0 ) THEN
-               u_l(k) = initial_profile(coord(1, k))
-               rhs_l(k) = 0.d0              
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.             
-            ENDIF            
-         ENDDO        
+!!$      !........................
+!!$      SUBROUTINE bc_rotation()
+!!$      !
+!!$      ! Square [0,1]x[0,1]
+!!$      !
+!!$      IMPLICIT NONE
+!!$
+!!$         DO k = 1, Nv
+!!$            IF ( (ABS(coord(1, k) - 1.d0)) <= 0.d0 ) THEN
+!!$               u_l(k) = 0.d0
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.
+!!$            ENDIF
+!!$         ENDDO
+!!$                    
+!!$         DO k = 1, Nv
+!!$            IF ( ABS(coord(2, k)) <= 0.d0 ) THEN
+!!$               IF (coord(1, k) >= 0.25d0 .AND. coord(1, k) <= 0.75d0) THEN
+!!$                  u_l(k) = DCOS(2.d0*PI*coord(1, k))**2
+!!$               ELSE
+!!$                  u_l(k) = 0
+!!$               ENDIF
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.           
+!!$            ENDIF            
+!!$         ENDDO        
+!!$      
+!!$      END SUBROUTINE bc_rotation
+!!$      !........................
       
-      END SUBROUTINE bc_linadv
-      !........................
-
-      !........................
-      SUBROUTINE bc_rotation()
-      !
-      ! Square [0,1]x[0,1]
-      !
-      IMPLICIT NONE
-
-         DO k = 1, Nv
-            IF ( (ABS(coord(1, k) - 1.d0)) <= 0.d0 ) THEN
-               u_l(k) = 0.d0
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.
-            ENDIF
-         ENDDO
-                    
-         DO k = 1, Nv
-            IF ( ABS(coord(2, k)) <= 0.d0 ) THEN
-               IF (coord(1, k) >= 0.25d0 .AND. coord(1, k) <= 0.75d0) THEN
-                  u_l(k) = DCOS(2.d0*PI*coord(1, k))**2
-               ELSE
-                  u_l(k) = 0
-               ENDIF
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.           
-            ENDIF            
-         ENDDO        
-      
-      END SUBROUTINE bc_rotation
-      !........................
-      
-      !......................
-      SUBROUTINE bc_burger()
-      !
-      ! Square [0,1]x[0,1]
-      !
-      IMPLICIT NONE
-
-         DO k = 1, Nv
-            IF ( ABS(coord(2, k)) <= 0.0 ) THEN
-               u_l(k) = 1.5d0 - 2.d0*coord(1, k)
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1              
-               is_loc(n_loc) = k
-               b_flag = .TRUE.  
-            ENDIF
-         ENDDO
-                    
-         DO k = 1, Nv
-            IF ((ABS(coord(1, k)  - 1.d0)) <= 0.0 ) THEN
-               u_l(k) = -0.5d0
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1              
-               is_loc(n_loc) = k
-               b_flag = .TRUE.             
-            ENDIF            
-         ENDDO 
-                
-         DO k = 1, Nv
-            IF ( ABS(coord(1, k)) <= 0.d0 .AND. &
-                 ABS(coord(2, k)) >= 0.d0) THEN
-               u_l(k) = 1.5d0 - 2.d0*coord(1, k)
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1              
-               is_loc(n_loc) = k
-               b_flag = .TRUE.         
-            ENDIF            
-         ENDDO   
-             
-      END SUBROUTINE bc_burger
-      !........................
+!!$      !......................
+!!$      SUBROUTINE bc_burger()
+!!$      !
+!!$      ! Square [0,1]x[0,1]
+!!$      !
+!!$      IMPLICIT NONE
+!!$
+!!$         DO k = 1, Nv
+!!$            IF ( ABS(coord(2, k)) <= 0.0 ) THEN
+!!$               u_l(k) = 1.5d0 - 2.d0*coord(1, k)
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1              
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.  
+!!$            ENDIF
+!!$         ENDDO
+!!$                    
+!!$         DO k = 1, Nv
+!!$            IF ((ABS(coord(1, k)  - 1.d0)) <= 0.0 ) THEN
+!!$               u_l(k) = -0.5d0
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1              
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.             
+!!$            ENDIF            
+!!$         ENDDO 
+!!$                
+!!$         DO k = 1, Nv
+!!$            IF ( ABS(coord(1, k)) <= 0.d0 .AND. &
+!!$                 ABS(coord(2, k)) >= 0.d0) THEN
+!!$               u_l(k) = 1.5d0 - 2.d0*coord(1, k)
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1              
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.         
+!!$            ENDIF            
+!!$         ENDDO   
+!!$             
+!!$      END SUBROUTINE bc_burger
+!!$      !........................
 
       !.........................
       SUBROUTINE bc_linviscadv()
@@ -598,304 +601,344 @@ CONTAINS
          DO k = 1, Nv
             IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
                  ABS(coord(2, k)) >  0.d0 ) THEN
-               u_l(k) = visc_advection(coord(1, k), coord(2, k), visc)
-               rhs_l(k) = 0.d0
+
+               du_l = grad_visc_advection(coord(1, k), coord(2, k), visc)
+
+               u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc)
+               u_l(3, k) = du_l(2)
+
+               rhs_l( (/1,3/), k) = 0.d0
+
                n_loc = n_loc + 1
                is_loc(n_loc) = k
-               b_flag = .TRUE.             
+               b_flag = .TRUE.
+
             ENDIF
          ENDDO
 
          DO k = 1, Nv           
             IF ( (ABS(coord(1, k)  - 1.d0)) <= 0.d0 ) THEN
-               u_l(k) = visc_advection(coord(1, k), coord(2, k), visc)
-               rhs_l(k) = 0.d0              
+
+               du_l = grad_visc_advection(coord(1, k), coord(2, k), visc)
+
+               u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc)
+               u_l(3, k) = du_l(2)
+
+               rhs_l( (/1,3/), k) = 0.d0
+    
                n_loc = n_loc + 1
                is_loc(n_loc) = k
-               b_flag = .TRUE.             
+               b_flag = .TRUE.
+           
             ENDIF            
          ENDDO
 
          DO k = 1, Nv
             IF ( ABS(coord(2, k)) <= 0.d0 )THEN
-               u_l(k) =  visc_advection(coord(1, k), coord(2, k), visc)
-               rhs_l(k) = 0.d0              
+
+               du_l = grad_visc_advection(coord(1, k), coord(2, k), visc)
+
+               u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc)
+               u_l(2, k) = du_l(1)
+
+               rhs_l(1:2, k) = 0.d0
+
                n_loc = n_loc + 1              
                is_loc(n_loc) = k
-               b_flag = .TRUE.             
+               b_flag = .TRUE.
+
+            ENDIF            
+         ENDDO
+
+         DO k = 1, Nv
+            IF ( ABS(coord(2, k) -1.d0) <= 0.d0 )THEN
+
+               du_l = grad_visc_advection(coord(1, k), coord(2, k), visc)
+
+               !u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc)
+               !u_l(2, k) = du_l(1)
+               u_l(3, k) = du_l(2)
+
+               !rhs_l( (/1,2/), k) = 0.d0
+               rhs_l(3, k) = 0.d0
+
+               n_loc = n_loc + 1              
+               is_loc(n_loc) = k
+               b_flag = .TRUE.
+
             ENDIF            
          ENDDO   
- 
+  
       END SUBROUTINE bc_linviscadv
       !...........................
       
-      !.........................
-      SUBROUTINE bc_smithutton()
-      !
-      ! Rectangle [-1,1]x[0,1]
-      !
-      IMPLICIT NONE
+!!$      !.........................
+!!$      SUBROUTINE bc_smithutton()
+!!$      !
+!!$      ! Rectangle [-1,1]x[0,1]
+!!$      !
+!!$      IMPLICIT NONE
+!!$
+!!$         DO k = 1, Nv
+!!$            IF ( ABS(coord(2, k)) <= 0.d0 .AND. &
+!!$                 coord(1, k) <= 0.d0 ) THEN
+!!$	       u_l(k) = 1 + TANH(theta*(2.d0*coord(1, k) + 1.d0))
+!!$	       rhs_l(k) = 0.d0
+!!$	       n_loc = n_loc + 1              
+!!$	       is_loc(n_loc) = k
+!!$	       b_flag = .TRUE.               
+!!$            ENDIF
+!!$         ENDDO
+!!$                    
+!!$         DO k = 1, Nv
+!!$            IF ((ABS(coord(2, k) - 1.d0)) <= 0.d0 ) THEN
+!!$               u_l(k) = 1.d0 - TANH(theta)
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1              
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.             
+!!$            ENDIF            
+!!$         ENDDO 
+!!$                
+!!$         DO k = 1, Nv
+!!$            IF ( (ABS(coord(1, k) - 1.d0)) <= 0.d0 .AND. &
+!!$                  ABS(coord(2, k))         >= 0.d0 ) THEN
+!!$               u_l(k) = 1.d0 - TANH(theta)
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1              
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.         
+!!$            ENDIF            
+!!$         ENDDO   
+!!$         
+!!$         DO k = 1, Nv
+!!$            IF ( (ABS(coord(1, k) + 1.d0)) <= 0.d0 .AND. &
+!!$                  ABS(coord(2, k) - 1.d0) >= 0.d0 ) THEN
+!!$               u_l(k) = 1.d0 - TANH(theta)
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1              
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.         
+!!$            ENDIF            
+!!$         ENDDO
+!!$         
+!!$      END SUBROUTINE bc_smithutton
+!!$      !............................
 
-         DO k = 1, Nv
-            IF ( ABS(coord(2, k)) <= 0.d0 .AND. &
-                 coord(1, k) <= 0.d0 ) THEN
-	       u_l(k) = 1 + TANH(theta*(2.d0*coord(1, k) + 1.d0))
-	       rhs_l(k) = 0.d0
-	       n_loc = n_loc + 1              
-	       is_loc(n_loc) = k
-	       b_flag = .TRUE.               
-            ENDIF
-         ENDDO
-                    
-         DO k = 1, Nv
-            IF ((ABS(coord(2, k) - 1.d0)) <= 0.d0 ) THEN
-               u_l(k) = 1.d0 - TANH(theta)
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1              
-               is_loc(n_loc) = k
-               b_flag = .TRUE.             
-            ENDIF            
-         ENDDO 
-                
-         DO k = 1, Nv
-            IF ( (ABS(coord(1, k) - 1.d0)) <= 0.d0 .AND. &
-                  ABS(coord(2, k))         >= 0.d0 ) THEN
-               u_l(k) = 1.d0 - TANH(theta)
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1              
-               is_loc(n_loc) = k
-               b_flag = .TRUE.         
-            ENDIF            
-         ENDDO   
-         
-         DO k = 1, Nv
-            IF ( (ABS(coord(1, k) + 1.d0)) <= 0.d0 .AND. &
-                  ABS(coord(2, k) - 1.d0) >= 0.d0 ) THEN
-               u_l(k) = 1.d0 - TANH(theta)
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1              
-               is_loc(n_loc) = k
-               b_flag = .TRUE.         
-            ENDIF            
-         ENDDO
-         
-      END SUBROUTINE bc_smithutton
-      !............................
+!!$      !..................................
+!!$      SUBROUTINE  bc_peraire_advec_diff()
+!!$      !
+!!$      ! Square [0,1]x[0,1]
+!!$      !
+!!$      IMPLICIT NONE
+!!$     
+!!$        DO k = 1, Nv
+!!$            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
+!!$                 ABS(coord(2, k)) >= 0.d0) THEN
+!!$               u_l(k) = 1.d0 - coord(2, k)
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.
+!!$            ENDIF
+!!$         ENDDO
+!!$
+!!$        DO k = 1, Nv
+!!$            IF ( ABS(coord(1, k)) >=  0.d0 .AND. & 
+!!$                 ABS(coord(2, k)) <= 0.d0) THEN
+!!$               u_l(k) = coord(1, k) - 1.d0
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.
+!!$            ENDIF
+!!$         ENDDO         
+!!$           
+!!$      END SUBROUTINE bc_peraire_advec_diff
+!!$      !...................................
 
-      !..................................
-      SUBROUTINE  bc_peraire_advec_diff()
-      !
-      ! Square [0,1]x[0,1]
-      !
-      IMPLICIT NONE
-     
-        DO k = 1, Nv
-            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
-                 ABS(coord(2, k)) >= 0.d0) THEN
-               u_l(k) = 1.d0 - coord(2, k)
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.
-            ENDIF
-         ENDDO
+!!$      !...............................
+!!$      SUBROUTINE bc_advection_source()
+!!$      !
+!!$      ! Square [0,1]x[0,1]
+!!$      !
+!!$      IMPLICIT NONE
+!!$
+!!$        DO k = 1, Nv
+!!$            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
+!!$                 ABS(coord(2, k)) >= 0.d0) THEN
+!!$               u_l(k) = 0.d0
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.
+!!$            ENDIF
+!!$         ENDDO       
+!!$
+!!$        DO k = 1, Nv
+!!$            IF ( ABS(coord(1, k)) >= 0.d0 .AND. & 
+!!$                 ABS(coord(2, k)) <= 0.d0) THEN
+!!$
+!!$               IF ( coord(1, k) >= 0.3d0 .AND. &
+!!$                    coord(1, k) <= 0.8d0 ) THEN
+!!$                  u_l(k) = -5.d0
+!!$               ELSE                  
+!!$                  u_l(k) = -0.d0                  
+!!$               ENDIF               
+!!$
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.
+!!$            ENDIF
+!!$         ENDDO
+!!$      
+!!$      END SUBROUTINE bc_advection_source
+!!$      !.................................
 
-        DO k = 1, Nv
-            IF ( ABS(coord(1, k)) >=  0.d0 .AND. & 
-                 ABS(coord(2, k)) <= 0.d0) THEN
-               u_l(k) = coord(1, k) - 1.d0
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.
-            ENDIF
-         ENDDO         
-           
-      END SUBROUTINE bc_peraire_advec_diff
-      !...................................
+!!$      !................................
+!!$      SUBROUTINE bc_manufacted_source()
+!!$      !
+!!$      ! Square [0,1]x[0,1]
+!!$      !
+!!$      IMPLICIT NONE
+!!$
+!!$         DO k = 1, Nv
+!!$            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
+!!$                 ABS(coord(2, k)) >= 0.d0) THEN
+!!$               u_l(k) = 1.d0
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.
+!!$            ENDIF
+!!$         ENDDO
+!!$          
+!!$         DO k = 1, Nv
+!!$            IF ( (ABS(coord(1, k) - 1.d0)) <= 0.d0) THEN
+!!$               u_l(k) = 1.d0
+!!$               rhs_l(k) = 0.d0              
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.             
+!!$            ENDIF            
+!!$         ENDDO
+!!$          
+!!$         DO k = 1, Nv
+!!$            IF ( ABS(coord(2, k)) <= 0.d0 ) THEN
+!!$               u_l(k) = 1.d0
+!!$               rhs_l(k) = 0.d0              
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.             
+!!$            ENDIF            
+!!$         ENDDO        
+!!$      
+!!$      END SUBROUTINE bc_manufacted_source
+!!$      !..................................
 
-      !...............................
-      SUBROUTINE bc_advection_source()
-      !
-      ! Square [0,1]x[0,1]
-      !
-      IMPLICIT NONE
+!!$      !.................................
+!!$      SUBROUTINE bc_transport_reaction()
+!!$      !
+!!$      ! arc circle r=[0.1, 1.0]
+!!$      !
+!!$      IMPLICIT NONE
+!!$
+!!$         DO k = 1, Nv
+!!$            IF ( coord(1, k) <= 0.d0 ) THEN
+!!$               u_l(k) = u_ex_transport_reaction(coord(1, k), &
+!!$                                                coord(2, k) )
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.
+!!$            ENDIF
+!!$         ENDDO
+!!$      
+!!$      END SUBROUTINE bc_transport_reaction
+!!$      !...................................
 
-        DO k = 1, Nv
-            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
-                 ABS(coord(2, k)) >= 0.d0) THEN
-               u_l(k) = 0.d0
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.
-            ENDIF
-         ENDDO       
+!!$      !.............................
+!!$      SUBROUTINE bc_boundary_layer()
+!!$      !
+!!$      ![0.05, 1.05]x[0, 0.001]
+!!$      ! 
+!!$      IMPLICIT NONE
+!!$
+!!$         DO k = 1, Nv
+!!$            IF ( ABS(coord(2, k)) <= 0.d0 ) THEN
+!!$               u_l(k) = u_ex_bl(coord(1, k), coord(2, k), visc)
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.
+!!$            ENDIF
+!!$         ENDDO
+!!$
+!!$         DO k = 1, Nv
+!!$            IF ( (ABS(coord(1, k) - 0.05d0)) < 0.d0 ) THEN
+!!$               u_l(k) = u_ex_bl(coord(1, k), coord(2, k), visc)
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.
+!!$            ENDIF
+!!$         ENDDO
+!!$
+!!$      END SUBROUTINE bc_boundary_layer
+!!$      !...............................
 
-        DO k = 1, Nv
-            IF ( ABS(coord(1, k)) >= 0.d0 .AND. & 
-                 ABS(coord(2, k)) <= 0.d0) THEN
-
-               IF ( coord(1, k) >= 0.3d0 .AND. &
-                    coord(1, k) <= 0.8d0 ) THEN
-                  u_l(k) = -5.d0
-               ELSE                  
-                  u_l(k) = -0.d0                  
-               ENDIF               
-
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.
-            ENDIF
-         ENDDO
-      
-      END SUBROUTINE bc_advection_source
-      !.................................
-
-      !................................
-      SUBROUTINE bc_manufacted_source()
-      !
-      ! Square [0,1]x[0,1]
-      !
-      IMPLICIT NONE
-
-         DO k = 1, Nv
-            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
-                 ABS(coord(2, k)) >= 0.d0) THEN
-               u_l(k) = 1.d0
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.
-            ENDIF
-         ENDDO
-          
-         DO k = 1, Nv
-            IF ( (ABS(coord(1, k) - 1.d0)) <= 0.d0) THEN
-               u_l(k) = 1.d0
-               rhs_l(k) = 0.d0              
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.             
-            ENDIF            
-         ENDDO
-          
-         DO k = 1, Nv
-            IF ( ABS(coord(2, k)) <= 0.d0 ) THEN
-               u_l(k) = 1.d0
-               rhs_l(k) = 0.d0              
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.             
-            ENDIF            
-         ENDDO        
-      
-      END SUBROUTINE bc_manufacted_source
-      !..................................
-
-      !.................................
-      SUBROUTINE bc_transport_reaction()
-      !
-      ! arc circle r=[0.1, 1.0]
-      !
-      IMPLICIT NONE
-
-         DO k = 1, Nv
-            IF ( coord(1, k) <= 0.d0 ) THEN
-               u_l(k) = u_ex_transport_reaction(coord(1, k), &
-                                                coord(2, k) )
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.
-            ENDIF
-         ENDDO
-      
-      END SUBROUTINE bc_transport_reaction
-      !...................................
-
-      !.............................
-      SUBROUTINE bc_boundary_layer()
-      !
-      ![0.05, 1.05]x[0, 0.001]
-      ! 
-      IMPLICIT NONE
-
-         DO k = 1, Nv
-            IF ( ABS(coord(2, k)) <= 0.d0 ) THEN
-               u_l(k) = u_ex_bl(coord(1, k), coord(2, k), visc)
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.
-            ENDIF
-         ENDDO
-
-         DO k = 1, Nv
-            IF ( (ABS(coord(1, k) - 0.05d0)) < 0.d0 ) THEN
-               u_l(k) = u_ex_bl(coord(1, k), coord(2, k), visc)
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.
-            ENDIF
-         ENDDO
-
-      END SUBROUTINE bc_boundary_layer
-      !...............................
-
-      !................................
-      SUBROUTINE  bc_pure_diffusion()
-      !
-      ! Square [0,1]x[0,1]
-      !
-      IMPLICIT NONE
-
-         DO k = 1, Nv
-            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
-                 ABS(coord(2, k)) >  0.d0) THEN
-               u_l(k) = u_ex_pure_diff(coord(1, k), coord(2, k))
-               rhs_l(k) = 0.d0
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.
-            ENDIF
-         ENDDO
-          
-         DO k = 1, Nv
-            IF ( (ABS(coord(1, k) - 1.d0)) <= 0.d0 .AND. &
-                  ABS(coord(2, k)) >  0.d0) THEN
-               u_l(k) = u_ex_pure_diff(coord(1, k), coord(2, k))
-               rhs_l(k) = 0.d0              
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.             
-            ENDIF            
-         ENDDO
-          
-         DO k = 1, Nv
-            IF ( ABS(coord(2, k)) <= 0.d0 ) THEN
-               u_l(k) = u_ex_pure_diff(coord(1, k), coord(2, k))
-               rhs_l(k) = 0.d0              
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.             
-            ENDIF            
-         ENDDO
- 
-         DO k = 1, Nv
-            IF ( ABS(coord(2, k) - 1.d0) <= 0.d0 ) THEN
-               u_l(k) = u_ex_pure_diff(coord(1, k), coord(2, k))
-               rhs_l(k) = 0.d0              
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.             
-            ENDIF            
-         ENDDO 
-
-       END SUBROUTINE bc_pure_diffusion       
-       !..................................
+!!$      !................................
+!!$      SUBROUTINE  bc_pure_diffusion()
+!!$      !
+!!$      ! Square [0,1]x[0,1]
+!!$      !
+!!$      IMPLICIT NONE
+!!$
+!!$         DO k = 1, Nv
+!!$            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
+!!$                 ABS(coord(2, k)) >  0.d0) THEN
+!!$               u_l(k) = u_ex_pure_diff(coord(1, k), coord(2, k))
+!!$               rhs_l(k) = 0.d0
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.
+!!$            ENDIF
+!!$         ENDDO
+!!$          
+!!$         DO k = 1, Nv
+!!$            IF ( (ABS(coord(1, k) - 1.d0)) <= 0.d0 .AND. &
+!!$                  ABS(coord(2, k)) >  0.d0) THEN
+!!$               u_l(k) = u_ex_pure_diff(coord(1, k), coord(2, k))
+!!$               rhs_l(k) = 0.d0              
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.             
+!!$            ENDIF            
+!!$         ENDDO
+!!$          
+!!$         DO k = 1, Nv
+!!$            IF ( ABS(coord(2, k)) <= 0.d0 ) THEN
+!!$               u_l(k) = u_ex_pure_diff(coord(1, k), coord(2, k))
+!!$               rhs_l(k) = 0.d0              
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.             
+!!$            ENDIF            
+!!$         ENDDO
+!!$ 
+!!$         DO k = 1, Nv
+!!$            IF ( ABS(coord(2, k) - 1.d0) <= 0.d0 ) THEN
+!!$               u_l(k) = u_ex_pure_diff(coord(1, k), coord(2, k))
+!!$               rhs_l(k) = 0.d0              
+!!$               n_loc = n_loc + 1
+!!$               is_loc(n_loc) = k
+!!$               b_flag = .TRUE.             
+!!$            ENDIF            
+!!$         ENDDO 
+!!$
+!!$       END SUBROUTINE bc_pure_diffusion       
+!!$       !..................................
 
    END SUBROUTINE strong_bc
    !=======================

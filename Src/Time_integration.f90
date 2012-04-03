@@ -3,12 +3,10 @@ MODULE time_integration
   USE Element_Class
   
   USE geometry,          ONLY: N_dofs, N_elements, elements
-  USE init_problem,      ONLY: pb_name, pb_type, visc, time_int, CFL, visc
+  USE init_problem,      ONLY: pb_name, pb_type, visc, &
+                               time_int, CFL, visc, N_eqn
 
-use FOS_system
-
-!!$  USE models,            ONLY: strong_bc
-!!$  USE space_integration
+  USE space_integration
 
   IMPLICIT NONE
   PRIVATE
@@ -25,25 +23,27 @@ CONTAINS
 
     IMPLICIT NONE
 
-    INTEGER,                    INTENT(IN)    :: ite
-    REAL(KIND=8), DIMENSION(:), INTENT(INOUT) :: uu
-    REAL(KIND=8), DIMENSION(:), INTENT(OUT)   :: rhs
-    REAL(KIND=8),               INTENT(OUT)   :: res
+    INTEGER,                      INTENT(INOUT) :: ite
+    REAL(KIND=8), DIMENSION(:,:), INTENT(INOUT) :: uu
+    REAL(KIND=8), DIMENSION(:,:), INTENT(OUT)   :: rhs
+    REAL(KIND=8),                 INTENT(OUT)   :: res
     !-----------------------------------------------
 
     REAL(KIND=8), DIMENSION(N_dofs) :: Dt_V
     
-    INTEGER :: UNIT, ierror
+    INTEGER :: i, UNIT, ierror
     !-----------------------------------------------
 
-!!$    CALL compute_rhs(uu, rhs, Dt_V)
+    CALL compute_rhs(uu, rhs, Dt_V)
     
     IF ( time_int == 0 ) THEN
 
        !---------------
        ! Esplicit Euler
        !----------------------------------
-       uu = uu - Dt_V*rhs
+       DO i = 1, N_eqn
+          uu(i,:) = uu(i,:) - Dt_V*rhs(i,:)
+       ENDDO
 
     ELSEIF ( time_int == 1 ) THEN
 
@@ -85,7 +85,7 @@ CONTAINS
     !--------------------
     ! Data on the screan
     !------------------------------------------------
-    WRITE(*, 600) ite, MINVAL(uu), MAXVAL(uu)
+    WRITE(*, 600) ite, MINVAL(uu(1,:)), MAXVAL(uu(1,:))
     WRITE(*, 601) res, res_0
     WRITE(*, *)
 
