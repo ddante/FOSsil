@@ -11,7 +11,7 @@ MODULE time_integration
   IMPLICIT NONE
   PRIVATE
 
-  REAL(KIND=8) :: res_0
+  REAL(KIND=8), DIMENSION(3) :: res_0
   
   PUBLIC :: time_advance
 
@@ -23,10 +23,10 @@ CONTAINS
 
     IMPLICIT NONE
 
-    INTEGER,                      INTENT(INOUT) :: ite
-    REAL(KIND=8), DIMENSION(:,:), INTENT(INOUT) :: uu
-    REAL(KIND=8), DIMENSION(:,:), INTENT(OUT)   :: rhs
-    REAL(KIND=8),                 INTENT(OUT)   :: res
+    INTEGER,                        INTENT(INOUT) :: ite
+    REAL(KIND=8), DIMENSION(:,:),   INTENT(INOUT) :: uu
+    REAL(KIND=8), DIMENSION(:,:),   INTENT(OUT)   :: rhs
+    REAL(KIND=8), DIMENSION(N_eqn), INTENT(OUT)   :: res
     !-----------------------------------------------
 
     REAL(KIND=8), DIMENSION(N_dofs) :: Dt_V
@@ -57,7 +57,9 @@ CONTAINS
     !-----------------------
     ! Normalized L2 Residual
     !-----------------------------------------------
-    res = SQRT(SUM(rhs*rhs)) / REAL(N_dofs)
+    DO i = 1, N_eqn
+       res(i) = SQRT(SUM(rhs(i,:)**2)) / REAL(N_dofs,8)
+    ENDDO
 
     IF(ite == 1) res_0 = res
     res = res/res_0
@@ -86,12 +88,14 @@ CONTAINS
     ! Data on the screan
     !------------------------------------------------
     WRITE(*, 600) ite, MINVAL(uu(1,:)), MAXVAL(uu(1,:))
-    WRITE(*, 601) res, res_0
+    WRITE(*, 601) res
+    WRITE(*, 602) res_0
     WRITE(*, *)
 
-500 FORMAT(I5, 1x, e24.16)      
+500 FORMAT(I6, 3F24.16)      
 600 FORMAT('Iteration # ', I5, '    uu min = ', F10.6, ', uu max =', F10.6)
-601 FORMAT('Residual = ', e16.8, '    Residual_0 = ' e16.8)
+601 FORMAT('Residual   = ', 3(E12.5, ' | ') )
+602 FORMAT('Residual_0 = ', 3(E12.5, ' | ') )
 
   END SUBROUTINE time_advance
   !==========================

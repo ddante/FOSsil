@@ -16,7 +16,7 @@ PROGRAM main
   REAL(KIND=8), DIMENSION(:,:), ALLOCATABLE :: uu
   REAL(KIND=8), DIMENSION(:,:), ALLOCATABLE :: rhs
 
-  REAL(KIND=8) :: res
+  REAL(KIND=8), DIMENSION(3) :: res
 
   INTEGER :: ite, UNIT
   !------------------------------------------------
@@ -62,11 +62,11 @@ PROGRAM main
 
      CALL time_advance(ite, uu, rhs, res)
     
-     IF (ite >= ite_max .OR. res < toll_res) EXIT
+     IF (ite >= ite_max .OR. MAXVAL(res) < toll_res) EXIT
  
      ite = ite + 1
 
-     IF( MOD(ite, 10000) == 0.0 ) THEN
+     IF( MOD(ite, 1000) == 0.0 ) THEN
         CALL plot_procedure(uu)
         CALL compute_error(uu)
      ENDIF

@@ -599,8 +599,9 @@ CONTAINS
       IMPLICIT NONE
 
          DO k = 1, Nv
-            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
-                 ABS(coord(2, k)) >  0.d0 ) THEN
+            IF ( coord(1, k) == 0.d0 .AND. & 
+                 coord(2, k) >  0.d0 .AND. &
+                 coord(2, k) <  1.d0 ) THEN
 
                du_l = grad_visc_advection(coord(1, k), coord(2, k), visc)
 
@@ -617,7 +618,9 @@ CONTAINS
          ENDDO
 
          DO k = 1, Nv           
-            IF ( (ABS(coord(1, k)  - 1.d0)) <= 0.d0 ) THEN
+            IF (  coord(1, k) == 1.d0 .AND. &
+                  coord(2, k) >  0.d0 .AND. &
+                  coord(2, k) <  1.d0 ) THEN
 
                du_l = grad_visc_advection(coord(1, k), coord(2, k), visc)
 
@@ -634,7 +637,7 @@ CONTAINS
          ENDDO
 
          DO k = 1, Nv
-            IF ( ABS(coord(2, k)) <= 0.d0 )THEN
+            IF ( coord(2, k) == 0.d0 )THEN
 
                du_l = grad_visc_advection(coord(1, k), coord(2, k), visc)
 
@@ -651,7 +654,7 @@ CONTAINS
          ENDDO
 
          DO k = 1, Nv
-            IF ( ABS(coord(2, k) -1.d0) <= 0.d0 )THEN
+            IF ( coord(2, k) == 1.d0 )THEN
 
                du_l = grad_visc_advection(coord(1, k), coord(2, k), visc)
 
@@ -666,9 +669,9 @@ CONTAINS
                is_loc(n_loc) = k
                b_flag = .TRUE.
 
-            ENDIF            
-         ENDDO   
-  
+            ENDIF
+         ENDDO
+
       END SUBROUTINE bc_linviscadv
       !...........................
       
