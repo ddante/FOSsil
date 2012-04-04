@@ -11,7 +11,7 @@ MODULE FOS_system
 
   PUBLIC :: FOS_advection_flux, FOS_source, &
             FOS_eigenvalues, FOS_right_eigenvectors, &
-            FOS_left_eigenvectors
+            FOS_left_eigenvectors, FOS_Jacobian
 
 CONTAINS
 
@@ -185,6 +185,41 @@ CONTAINS
   END FUNCTION FOS_left_eigenvectors
   !=================================
 
+  !======================================
+  FUNCTION FOS_Jacobian(a, nu) RESULT(AA)
+  !======================================
+
+    IMPLICIT NONE
+
+    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: a
+    REAL(KIND=8),               INTENT(IN) :: nu
+
+    REAL(KIND=8), DIMENSION(3,3, N_dim) :: AA
+    !-------------------------------------------
+
+    REAL(KIND=8) :: TR, LR, mod_a
+    !-------------------------------------------
+
+    mod_a = SQRT(SUM(a**2))
+
+    LR = FOS_Characteristic_length(a, nu)
+    TR = LR/(mod_a + nu/LR)
+
+    ! A_x
+    !--------------------------------------
+    AA(1,:, 1) = (/ a(1),    -nu,   0.d0 /)
+    AA(2,:, 1) = (/-1.d0/TR,  0.d0, 0.d0 /)
+    AA(3,:, 1) = (/ 0.d0,     0.d0, 0.d0 /)
+
+    ! A_y
+    !--------------------------------------
+    AA(1,:, 2) = (/ a(2),    0.d0, -nu   /)
+    AA(2,:, 2) = (/ 0.d0,    0.d0,  0.d0 /)
+    AA(3,:, 2) = (/-1.d0/TR, 0.d0,  0.d0 /)
+
+  END FUNCTION FOS_Jacobian
+  !======================== 
+
   !==================================================
   FUNCTION FOS_Characteristic_length(a, nu) RESULT(L)
   !==================================================
@@ -199,7 +234,7 @@ CONTAINS
     REAL(KIND=8) :: Re_pi
     !-------------------------------------------
 
-    Re_pi = SQRT(SUM(a**2)) / (nu * Pi)
+    Re_pi = DSQRT(SUM(a**2)) / (nu * Pi)
     
     L = ( (RE_pi/( DSQRT(1.d0 + Re_pi**2) + 1.d0 )) + &
           (DSQRT(1.d0 + 2.d0/( DSQRT(1.d0 + Re_pi**2) +1.d0))) ) / (2.d0*PI)

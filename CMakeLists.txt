@@ -25,6 +25,7 @@ SET(QUADRATURE_FILES
 SET(SCHEME_FILES
   Src/Schemes/Num_Scheme.f90
   Src/Schemes/LDA_method.f90
+  Src/Schemes/LW_method.f90 
 )
 
 SET(MAIN_FILES 

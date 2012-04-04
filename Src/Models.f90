@@ -607,7 +607,7 @@ CONTAINS
 
                u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc)
                u_l(3, k) = du_l(2)
-
+ 
                rhs_l( (/1,3/), k) = 0.d0
 
                n_loc = n_loc + 1
