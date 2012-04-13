@@ -8,6 +8,8 @@ MODULE LW_method
   USE Lin_Algebra,      ONLY: inverse
   USE FOS_system
 
+  USE Quadrature_rules
+
   IMPLICIT NONE
   PRIVATE
 
@@ -77,10 +79,9 @@ CONTAINS
 
     a_m = advection_speed(pb_type, u_m, x_m, y_m)
 
-    DO i = 1, N_verts
+    DO i = 1, N_dofs
        
        mod_n = DSQRT( SUM(ele%rd_n(:,i)**2) )
-
        v_n = ele%rd_n(:,i)/mod_n
 
        lambda = FOS_eigenvalues(a_m, visc, v_n)
@@ -89,13 +90,15 @@ CONTAINS
 
        PP = 0.d0
        DO j = 1, N_eqn
-          PP(j, j) = MAX(0.d0, lambda(j))*mod_n
+          !PP(j, j) = MAX(0.d0, lambda(j))*mod_n
+          PP(j, j) = ABS(lambda(j))*mod_n
        ENDDO
 
        Tau_ = Tau_ + 0.5d0 * MATMUL(RR, MATMUL(PP, LL))
 
        ! Time step
-       inv_dt = MAX(inv_dt,  0.5d0*PP(2,2))
+       !inv_dt = MAX(inv_dt,  0.5d0*PP(2,2))
+       inv_dt = MAX( inv_dt,  MAXVAL(ABS(PP)) )
 
     ENDDO
 
@@ -135,7 +138,7 @@ CONTAINS
 
        Stab_right = Stab_right - &
                     FOS_source(pb_type, u_q, visc, xy(1,iq), xy(2,iq))
-
+     
        DO i = 1, N_dofs
 
           Stab_left_i = 0.d0

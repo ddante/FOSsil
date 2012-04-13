@@ -3,8 +3,10 @@ MODULE LLxFS_method
   USE Element_class
   USE geometry,       ONLY: N_dim, elements
   USE init_problem,   ONLY: pb_type
-  USE models,         ONLY: advection_speed, source_term
-  USE init_problem,   ONLY: is_visc, visc
+  USE models,         ONLY: advection_speed
+  USE init_problem,   ONLY: N_eqn, pb_type, visc
+  USE Lin_Algebra,    ONLY: inverse
+  USE FOS_system
 
   IMPLICIT NONE
   PRIVATE
@@ -13,16 +15,15 @@ MODULE LLxFS_method
 
 CONTAINS
 
-  !==========================================================
-  SUBROUTINE LLxFS_scheme(ele, Phi_tot, u, D_u, Phi_i, alpha)
-  !==========================================================
+  !=====================================================
+  SUBROUTINE LLxFS_scheme(ele, Phi_tot, u, Phi_i, alpha)
+  !=====================================================
 
     IMPLICIT NONE
 
     TYPE(element),                INTENT(IN)  :: ele
     REAL(KIND=8),                 INTENT(IN)  :: Phi_tot
     REAL(KIND=8), DIMENSION(:),   INTENT(IN)  :: u
-    REAL(KIND=8), DIMENSION(:,:), INTENT(IN)  :: D_u    
     REAL(KIND=8), DIMENSION(:),   INTENT(OUT) :: Phi_i
     REAL(KIND=8),                 INTENT(OUT) :: alpha
     !--------------------------------------------------
@@ -42,6 +43,7 @@ CONTAINS
     !-----------
     ! Mean state
     !----------------------------------------------
+    
     u_m = SUM(u) / REAL(Ns)
 
     x_m = SUM(ele%Coords(1, :)) / REAL(Ns)
@@ -78,8 +80,6 @@ CONTAINS
     ! Stabilization
     !---------------------------------
     Stab_i = GLS_stabilization(ele, u, D_u)
-
-    !Stab_i = CIP_stabilization2(ele, u)
 
     Phi_i = Phi_i + Stab_i
 

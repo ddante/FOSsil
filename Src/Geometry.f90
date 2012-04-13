@@ -919,7 +919,10 @@ CONTAINS
 
        CASE("Edges")
 
-          READ(unit, *) dummy ! skip edge
+          READ(unit, *) i ! skip edge
+          DO j = 1, i
+             READ(unit, *) dummy
+          ENDDO
 
           READ(unit, *) Key
 

@@ -82,7 +82,8 @@ CONTAINS
        S_Kp = S_Kp + Kp(:,:, i)
 
        ! Time step
-       inv_dt = MAX(inv_dt,  0.5d0*PP(2,2))
+       !inv_dt = MAX(inv_dt,  0.5d0*PP(2,2))
+       inv_dt = MAX(inv_dt,  MAXVAL(ABS(PP)))
        
     ENDDO
 

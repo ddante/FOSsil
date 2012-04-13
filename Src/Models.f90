@@ -17,7 +17,8 @@ MODULE models
                          MANUFACTED_SOURCE  = 7, &
                          TRANSPORT_REACTION = 8, &
                          BOUNDARY_LAYER     = 9, &
-                         PURE_DIFFUSION     = 10
+                         PURE_DIFFUSION     = 10,&
+                         EXP_ADVEC_DIFF     = 11
    !===============================================
    
    REAL(KIND=8), PARAMETER :: PI = DACOS(-1.d0)
@@ -109,6 +110,11 @@ MODULE models
             a(1) = 0.d0
             a(2) = 0.d0
 
+         CASE(EXP_ADVEC_DIFF)
+
+            a(1) = 1.d0
+            a(2) = 0.8d0
+
          CASE DEFAULT
          
             WRITE(*,*) 'Problem of unknow type.'
@@ -196,6 +202,11 @@ MODULE models
             flux(1) = 0.d0
             flux(2) = 0.d0
 
+         CASE(EXP_ADVEC_DIFF)
+
+            flux(1) = 1.d0*uu
+            flux(2) = 0.8d0*uu
+
          CASE DEFAULT
          
             WRITE(*,*) 'Problem of unknow type.'
@@ -235,6 +246,10 @@ MODULE models
             flux = mu * D_uu
 
          CASE(PURE_DIFFUSION)
+
+            flux = mu * D_uu
+
+         CASE(EXP_ADVEC_DIFF)
 
             flux = mu * D_uu
 
@@ -353,7 +368,7 @@ MODULE models
      
    END FUNCTION detect_source
    !=========================
- 
+
    !===========================================
    SUBROUTINE strong_bc(type_pb, visc, uu, rhs)
    !===========================================
@@ -420,7 +435,7 @@ MODULE models
                
 	 CASE(LIN_VISC_ADVEC)
 	    
-	    CALL bc_linviscadv()
+            CALL bc_linviscadv()
 
 !!$         CASE(SMITH_HUTTON)
 !!$            
@@ -446,10 +461,14 @@ MODULE models
 !!$
 !!$            CALL bc_boundary_layer()
 
-!!$         CASE(PURE_DIFFUSION)
-!!$
-!!$            CALL bc_pure_diffusion()
+         CASE(PURE_DIFFUSION)
 
+            CALL bc_pure_diffusion()
+
+!!$         CASE(EXP_ADVEC_DIFF)
+!!$               
+!!$            CALL bc_exp_advec_diff()
+               
          CASE DEFAULT
          
             WRITE(*,*) 'Problem of unknow type.'
@@ -605,10 +624,9 @@ CONTAINS
 
                du_l = grad_visc_advection(coord(1, k), coord(2, k), visc)
 
-               u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc)
-               u_l(3, k) = du_l(2)
- 
-               rhs_l( (/1,3/), k) = 0.d0
+               u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc); rhs_l(1, k) = 0.d0
+              !u_l(2, k) = du_l(1); rhs_l(2, k) = 0.d0
+               !u_l(3, k) = du_l(2); rhs_l(3, k) = 0.d0
 
                n_loc = n_loc + 1
                is_loc(n_loc) = k
@@ -624,11 +642,10 @@ CONTAINS
 
                du_l = grad_visc_advection(coord(1, k), coord(2, k), visc)
 
-               u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc)
-               u_l(3, k) = du_l(2)
-
-               rhs_l( (/1,3/), k) = 0.d0
-    
+               u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc); rhs_l(1, k) = 0.d0
+              !u_l(2, k) = du_l(1); rhs_l(2, k) = 0.d0; rhs_l(2, k) = 0.d0
+               !u_l(3, k) = du_l(2); rhs_l(3, k) = 0.d0; rhs_l(3, k) = 0.d0
+              
                n_loc = n_loc + 1
                is_loc(n_loc) = k
                b_flag = .TRUE.
@@ -641,10 +658,9 @@ CONTAINS
 
                du_l = grad_visc_advection(coord(1, k), coord(2, k), visc)
 
-               u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc)
-               u_l(2, k) = du_l(1)
-
-               rhs_l(1:2, k) = 0.d0
+               u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc); rhs_l(1, k) = 0.d0
+               !u_l(2, k) = du_l(1); rhs_l(2, k) = 0.d0
+               !u_l(3, k) = du_l(2); rhs_l(3, k) = 0.d0
 
                n_loc = n_loc + 1              
                is_loc(n_loc) = k
@@ -658,12 +674,9 @@ CONTAINS
 
                du_l = grad_visc_advection(coord(1, k), coord(2, k), visc)
 
-               !u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc)
-               !u_l(2, k) = du_l(1)
-               u_l(3, k) = du_l(2)
-
-               !rhs_l( (/1,2/), k) = 0.d0
-               rhs_l(3, k) = 0.d0
+              !u_l(1, k) = visc_advection(coord(1, k), coord(2, k), visc); rhs_l(1, k) = 0.d0
+               !u_l(2, k) = du_l(1); rhs_l(2, k) = 0.d0
+               u_l(3, k) = du_l(2); rhs_l(3, k) = 0.d0
 
                n_loc = n_loc + 1              
                is_loc(n_loc) = k
@@ -891,57 +904,143 @@ CONTAINS
 !!$      END SUBROUTINE bc_boundary_layer
 !!$      !...............................
 
-!!$      !................................
-!!$      SUBROUTINE  bc_pure_diffusion()
-!!$      !
-!!$      ! Square [0,1]x[0,1]
-!!$      !
-!!$      IMPLICIT NONE
-!!$
-!!$         DO k = 1, Nv
-!!$            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
-!!$                 ABS(coord(2, k)) >  0.d0) THEN
-!!$               u_l(k) = u_ex_pure_diff(coord(1, k), coord(2, k))
-!!$               rhs_l(k) = 0.d0
-!!$               n_loc = n_loc + 1
-!!$               is_loc(n_loc) = k
-!!$               b_flag = .TRUE.
-!!$            ENDIF
-!!$         ENDDO
-!!$          
-!!$         DO k = 1, Nv
-!!$            IF ( (ABS(coord(1, k) - 1.d0)) <= 0.d0 .AND. &
-!!$                  ABS(coord(2, k)) >  0.d0) THEN
-!!$               u_l(k) = u_ex_pure_diff(coord(1, k), coord(2, k))
-!!$               rhs_l(k) = 0.d0              
-!!$               n_loc = n_loc + 1
-!!$               is_loc(n_loc) = k
-!!$               b_flag = .TRUE.             
-!!$            ENDIF            
-!!$         ENDDO
-!!$          
-!!$         DO k = 1, Nv
-!!$            IF ( ABS(coord(2, k)) <= 0.d0 ) THEN
-!!$               u_l(k) = u_ex_pure_diff(coord(1, k), coord(2, k))
-!!$               rhs_l(k) = 0.d0              
-!!$               n_loc = n_loc + 1
-!!$               is_loc(n_loc) = k
-!!$               b_flag = .TRUE.             
-!!$            ENDIF            
-!!$         ENDDO
-!!$ 
-!!$         DO k = 1, Nv
-!!$            IF ( ABS(coord(2, k) - 1.d0) <= 0.d0 ) THEN
-!!$               u_l(k) = u_ex_pure_diff(coord(1, k), coord(2, k))
-!!$               rhs_l(k) = 0.d0              
-!!$               n_loc = n_loc + 1
-!!$               is_loc(n_loc) = k
-!!$               b_flag = .TRUE.             
-!!$            ENDIF            
-!!$         ENDDO 
-!!$
-!!$       END SUBROUTINE bc_pure_diffusion       
-!!$       !..................................
+      !................................
+      SUBROUTINE  bc_pure_diffusion()
+      !
+      ! Square [0,1]x[0,1]
+      !
+      IMPLICIT NONE
+
+         DO k = 1, Nv
+            IF ( ABS(coord(1, k)) <= 0.d0 .AND. & 
+                 ABS(coord(2, k)) >  0.d0) THEN
+
+               u_l(1, k) = u_ex_pure_diff(coord(1, k), coord(2, k)); rhs_l(1,k) = 0.d0
+              !u_l(3, k) = u_ex_pure_diff(coord(1, k), coord(2, k)); rhs_l(3,k) = 0.d0
+
+               n_loc = n_loc + 1
+               is_loc(n_loc) = k
+               b_flag = .TRUE.
+            ENDIF
+         ENDDO
+          
+         DO k = 1, Nv
+            IF ( (ABS(coord(1, k) - 1.d0)) <= 0.d0 .AND. &
+                  ABS(coord(2, k)) >  0.d0) THEN
+
+               u_l(1, k) = u_ex_pure_diff(coord(1, k), coord(2, k)); rhs_l(1,k) = 0.d0
+              !u_l(3, k) = u_ex_pure_diff(coord(1, k), coord(2, k)); rhs_l(3,k) = 0.d0
+
+               n_loc = n_loc + 1
+               is_loc(n_loc) = k
+               b_flag = .TRUE.             
+            ENDIF            
+         ENDDO
+          
+         DO k = 1, Nv
+            IF ( ABS(coord(2, k)) <= 0.d0 ) THEN
+
+               u_l(1, k) = u_ex_pure_diff(coord(1, k), coord(2, k)); rhs_l(1,k) = 0.d0
+              !u_l(2, k) = u_ex_pure_diff(coord(1, k), coord(2, k)); rhs_l(2,k) = 0.d0
+
+               n_loc = n_loc + 1
+               is_loc(n_loc) = k
+               b_flag = .TRUE.             
+            ENDIF            
+         ENDDO
+ 
+         DO k = 1, Nv
+            IF ( ABS(coord(2, k) - 1.d0) <= 0.d0 ) THEN
+
+               u_l(1, k) = u_ex_pure_diff(coord(1, k), coord(2, k)); rhs_l(1,k) = 0.d0
+              !u_l(2, k) = u_ex_pure_diff(coord(1, k), coord(2, k)); rhs_l(2,k) = 0.d0
+
+               n_loc = n_loc + 1
+               is_loc(n_loc) = k
+               b_flag = .TRUE.             
+            ENDIF            
+         ENDDO 
+
+       END SUBROUTINE bc_pure_diffusion       
+       !..................................
+
+      !.............................
+      SUBROUTINE bc_exp_advec_diff()
+      !
+      ! Square [0,1]x[0,1]
+      !
+      IMPLICIT NONE
+
+         DO k = 1, Nv
+            IF ( coord(1, k) == 0.d0 .AND. & 
+                 coord(2, k) >  0.d0 .AND. &
+                 coord(2, k) <  1.d0 ) THEN
+
+               du_l = grad_exp_advection(coord(1, k), coord(2, k), visc)
+
+               u_l(1, k) = exp_advection(coord(1, k), coord(2, k), visc); rhs_l(1, k) = 0.d0
+               !u_l(2, k) = du_l(1); rhs_l(2, k) = 0.d0
+               u_l(3, k) = du_l(2); rhs_l(3, k) = 0.d0
+                            
+               n_loc = n_loc + 1
+               is_loc(n_loc) = k
+               b_flag = .TRUE.
+
+            ENDIF
+         ENDDO
+
+         DO k = 1, Nv           
+            IF (  coord(1, k) == 1.d0 .AND. &
+                  coord(2, k) >  0.d0 .AND. &
+                  coord(2, k) <  1.d0 ) THEN
+
+               du_l = grad_exp_advection(coord(1, k), coord(2, k), visc)
+
+               u_l(1, k) = exp_advection(coord(1, k), coord(2, k), visc); rhs_l(1, k) = 0.d0
+               !u_l(2, k) = du_l(1); rhs_l(2, k) = 0.d0
+               u_l(3, k) = du_l(2); rhs_l(3, k) = 0.d0
+
+               n_loc = n_loc + 1
+               is_loc(n_loc) = k
+               b_flag = .TRUE.
+           
+            ENDIF            
+         ENDDO
+
+         DO k = 1, Nv
+            IF ( coord(2, k) == 0.d0 )THEN
+
+               du_l = grad_exp_advection(coord(1, k), coord(2, k), visc)
+
+               u_l(1, k) = exp_advection(coord(1, k), coord(2, k), visc); rhs_l(1, k) = 0.d0
+               u_l(2, k) = du_l(1); rhs_l(2, k) = 0.d0
+               !u_l(3, k) = du_l(2); rhs_l(3, k) = 0.d0
+              
+               n_loc = n_loc + 1              
+               is_loc(n_loc) = k
+               b_flag = .TRUE.
+
+            ENDIF
+         ENDDO
+
+         DO k = 1, Nv
+            IF ( coord(2, k) == 1.d0 )THEN
+
+               du_l = grad_exp_advection(coord(1, k), coord(2, k), visc)
+
+               u_l(1, k) = exp_advection(coord(1, k), coord(2, k), visc); rhs_l(1, k) = 0.d0
+               u_l(2, k) = du_l(1); rhs_l(2, k) = 0.d0
+               !u_l(3, k) = du_l(2); rhs_l(3, k) = 0.d0
+
+               n_loc = n_loc + 1              
+               is_loc(n_loc) = k
+               b_flag = .TRUE.
+
+            ENDIF
+         ENDDO
+
+       END SUBROUTINE bc_exp_advec_diff
+      !................................
 
    END SUBROUTINE strong_bc
    !=======================
@@ -1033,6 +1132,10 @@ CONTAINS
 
          uu_ex = u_ex_pure_diff(x, y)
 
+      CASE(EXP_ADVEC_DIFF)
+
+         uu_ex = exp_advection(x, y, nu)
+
       CASE DEFAULT
 
          stop
@@ -1073,6 +1176,10 @@ CONTAINS
       CASE(PURE_DIFFUSION)
 
          G_uu_ex = grad_pure_diff(x, y)
+
+      CASE(EXP_ADVEC_DIFF)
+
+         G_uu_ex = grad_exp_advection(x, y, nu)
 
       CASE DEFAULT
 
@@ -1269,5 +1376,56 @@ CONTAINS
 
      END FUNCTION grad_pure_diff
      !==========================
+
+     !=========================================
+     FUNCTION exp_advection(x, y, nu) RESULT(u)
+     !=========================================
+
+       IMPLICIT NONE
+
+       REAL(KIND=8), INTENT(IN) :: x
+       REAL(KIND=8), INTENT(IN) :: y
+       REAL(KIND=8), INTENT(IN) :: nu
+
+       REAL(KIND=8) :: u
+       !------------------------------
+
+       REAL(KIND=8), DIMENSION(2) :: a
+       !-------------------------------
+
+       a = (/ 1.0, 0.8 /)       
+
+       u = ( (1 - exp((x-1.d0)*a(1)/nu))*(1 - exp((y-1.d0)*a(2)/nu)) ) /&
+           ( (1 - exp(-a(1)/nu))*(1 - exp(-a(2)/nu)) ) 
+
+
+     END FUNCTION exp_advection
+
+     !=========================
+
+     !===============================================
+     FUNCTION grad_exp_advection(x, y, nu) RESULT(GG)
+     !===============================================
+
+       IMPLICIT NONE
+
+       REAL(KIND=8), INTENT(IN) :: x
+       REAL(KIND=8), INTENT(IN) :: y
+       REAL(KIND=8), INTENT(IN) :: nu
+
+       REAL(KIND=8), DIMENSION(2) :: GG
+       !------------------------------
+
+       REAL(KIND=8), DIMENSION(2) :: a
+       !-------------------------------
+
+       GG(1) = -0.1000000000D2 * exp(0.1D2 * x - 0.1D2) * &
+                (0.1D1 - exp(0.8000000000D1 * y - 0.8000000000D1))
+
+       GG(2) = -0.8000000000D1 * (0.1D1 - exp(0.1D2 * x - 0.1D2)) * &
+                exp(0.8000000000D1 * y - 0.8000000000D1)
+
+     END FUNCTION grad_exp_advection
+     !==============================
 
 END MODULE models

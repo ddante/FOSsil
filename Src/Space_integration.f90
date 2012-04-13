@@ -7,7 +7,8 @@ MODULE space_integration
   USE init_problem,   ONLY: order, pb_type, visc, CFL, N_eqn
 
   USE models,         ONLY: advection_flux, diffusion_flux, &
-                            advection_speed, strong_bc
+                            advection_speed, strong_bc,     &
+                            exact_solution, exact_grad
   USE FOS_system
   USE Num_scheme
 
@@ -80,7 +81,10 @@ CONTAINS
     ! Impose strong bc 
     ! RHS = 0 on the inlet
     !-------------------------------------
-    CALL strong_bc(pb_type, visc, uu, rhs)
+    !CALL strong_bc(pb_type, visc, uu, rhs)
+
+    ! weak bc
+    rhs = rhs + Res_weak_bc(uu)
 
   END SUBROUTINE compute_rhs
   !=========================
@@ -179,5 +183,110 @@ CONTAINS
 
   END FUNCTION total_residual
   !==========================
+
+  !=====================================
+  FUNCTION Res_weak_bc(uu) RESULT(res_b)
+  !=====================================
+
+    IMPLICIT NONE
+
+    REAL(KIND=8), DIMENSION(:,:), INTENT(IN) :: uu
+
+    REAL(KIND=8), DIMENSION(SIZE(uu,1),SIZE(uu,2)) :: res_b
+    !------------------------------------------------------
+
+    TYPE(element) :: ele
+
+    INTEGER,                      POINTER :: N_quad
+    INTEGER,                      POINTER :: N_points
+    INTEGER,      DIMENSION(:),   POINTER :: loc
+    INTEGER,      DIMENSION(:),   POINTER :: nu
+    REAL(KIND=8), DIMENSION(:,:), POINTER :: p
+    REAL(KIND=8), DIMENSION(:,:), POINTER :: n
+    REAL(KIND=8), DIMENSION(:),   POINTER :: w
+    REAL(KIND=8), DIMENSION(:,:), POINTER :: xy
+    !---------------------------------------------------
+
+    REAL(KIND=8), DIMENSION(:,:), ALLOCATABLE :: u
+
+    REAL(KIND=8), DIMENSION(N_eqn)        :: lambda
+    REAL(KIND=8), DIMENSION(N_eqn, N_eqn) :: RR, LL
+    REAL(KIND=8), DIMENSION(N_eqn, N_eqn) :: Neg
+
+    REAL(KIND=8), DIMENSION(N_dim) :: a_q
+    REAL(KIND=8), DIMENSION(N_eqn) :: u_ex, u_q, eta, alpha
+
+    INTEGER :: je, jf, iq, k, j, i
+    !---------------------------------------------------
+
+    res_b = 0.d0
+
+    DO je = 1, N_elements
+
+       ele = elements(je)%p
+
+       ALLOCATE( u(N_eqn, ele%N_points) )
+
+       u = uu(:, ele%Nu)
+
+       DO jf = 1, ele%N_faces
+
+          ! Boundary face
+          IF( ele%faces(jf)%f%c_ele == 0 ) THEN
+
+             N_quad   => ele%faces(jf)%f%N_quad
+             N_points => ele%faces(jf)%f%N_points
+             nu       => ele%faces(jf)%f%nu
+             loc      => ele%faces(jf)%f%l_nu
+             p        => ele%faces(jf)%f%phi_q
+             w        => ele%faces(jf)%f%w_q
+             n        => ele%faces(jf)%f%n_q
+             xy       => ele%faces(jf)%f%xx_q
+
+             DO iq = 1, N_quad
+
+                u_q = 0.d0
+                DO k = 1, N_points
+                   u_q = u_q + u(:, loc(k)) * p(k, iq)
+                ENDDO
+
+                a_q = advection_speed(pb_type, u_q(1), xy(1, iq), xy(2, iq))
+
+                u_ex(1)   = exact_solution(pb_type, xy(:, iq), visc)
+                u_ex(2:3) = exact_grad(pb_type, xy(:, iq), visc)
+
+                lambda = FOS_eigenvalues(a_q, visc, n(:,iq))
+                RR = FOS_right_eigenvectors(a_q, visc, n(:,iq))
+                LL = FOS_left_eigenvectors(a_q, visc, n(:,iq))
+
+                Neg = 0.d0
+                DO j = 1, N_eqn
+                   Neg(j, j) = MIN(0.d0, lambda(j))
+                ENDDO
+
+                eta = MATMUL(LL, u_ex - u_q)
+                
+                alpha = MATMUL( RR, MATMUL(Neg, eta) )
+
+                DO i = 1, N_points
+
+                   res_b(:, Nu(i)) = res_b(:, Nu(i)) + &
+                                     w(iq)*p(i, iq)*alpha
+
+                ENDDO                
+
+             ENDDO ! iq -> # quad
+
+          ENDIF
+
+       ENDDO ! jf -> # faces
+
+       DEALLOCATE( u )
+
+    ENDDO ! je -> # ele
+
+  END FUNCTION Res_weak_bc 
+  !=======================
+
 
 END MODULE space_integration

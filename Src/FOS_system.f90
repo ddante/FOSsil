@@ -37,7 +37,7 @@ CONTAINS
     u = uu(1); p = uu(2); q = uu(3)
 
     a = advection_speed(type_pb, u, x, y)
-    mod_a = SQRT(SUM(a**2))
+    mod_a = DSQRT(SUM(a**2))
     
     LR = FOS_Characteristic_length(a, nu)
     TR = LR/(mod_a + nu/LR)
@@ -50,37 +50,37 @@ CONTAINS
   !==============================
 
   !====================================================
-  FUNCTION FOS_source(type_pb, uu, nu, x, y) RESULT(SS)
+  FUNCTION FOS_SOURCE(TYPE_PB, UU, NU, X, Y) RESULT(SS)
   !====================================================
 
     IMPLICIT NONE
     
-    INTEGER,                    INTENT(IN) :: type_pb
-    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: uu
-    REAL(KIND=8),               INTENT(IN) :: nu
-    REAL(KIND=8),               INTENT(IN) :: x, y
+    INTEGER,                    INTENT(IN) :: TYPE_PB
+    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: UU
+    REAL(KIND=8),               INTENT(IN) :: NU
+    REAL(KIND=8),               INTENT(IN) :: X, Y
     
-    REAL(KIND=8), DIMENSION(SIZE(uu)) :: SS
+    REAL(KIND=8), DIMENSION(SIZE(UU)) :: SS
     !---------------------------------------------
 
-    REAL(KIND=8), DIMENSION(N_dim) :: a
+    REAL(KIND=8), DIMENSION(N_DIM) :: A
 
-    REAL(KIND=8) :: u, p, q, TR, LR, mod_a
+    REAL(KIND=8) :: U, P, Q, TR, LR, MOD_A
     !---------------------------------------------
 
-    u = uu(1); p = uu(2); q = uu(3)
+    U = UU(1); P = UU(2); Q = UU(3)
 
-    a = advection_speed(type_pb, u, x, y)
-    mod_a = SQRT(SUM(a**2))
+    A = ADVECTION_SPEED(TYPE_PB, U, X, Y)
+    MOD_A = SQRT(SUM(A**2))
 
-    LR = FOS_Characteristic_length(a, nu)
-    TR = LR/(mod_a + nu/LR)
+    LR = FOS_CHARACTERISTIC_LENGTH(A, NU)
+    TR = LR/(MOD_A + NU/LR)
 
-    SS(1) = source_term(type_pb, u, nu, x, y)    
-    SS(2) = -p/TR
-    SS(3) = -q/TR
+    SS(1) = SOURCE_TERM(TYPE_PB, U, NU, X, Y)    
+    SS(2) = -P/TR
+    SS(3) = -Q/TR
 
-  END FUNCTION FOS_source
+  END FUNCTION FOS_SOURCE
   !======================
 
   !================================================
@@ -96,7 +96,7 @@ CONTAINS
     REAL(KIND=8), DIMENSION(3) :: lambda
     !-------------------------------------------
 
-    REAL(KIND=8) :: an, an_m, an_p, Re_m, Re_p, LR
+    REAL(KIND=8) :: An, An_m, An_p, Re_m, Re_p, Lr
     !---------------------------------------------
     
     an = DOT_PRODUCT(a, n)
@@ -104,13 +104,13 @@ CONTAINS
     an_m = MIN(0.d0, an)
     an_p = MAX(0.d0, an)
 
-    LR = FOS_Characteristic_length(a, nu)
+    Lr = FOS_characteristic_length(a, nu)
 
-    !Re_m = an_m * LR / nu
-    !Re_p = an_p * LR / nu
+    !RE_M = AN_M * LR / NU
+    !RE_P = AN_P * LR / NU
 
-    lambda(1) = an_m - nu/LR ! an_m*(1 - 1/Re_m)
-    lambda(2) = an_p + nu/LR ! an_p*(1 + 1/Re_p)
+    lambda(1) = an_m - nu/lr ! an_m*(1 - 1/re_m)
+    lambda(2) = an_p + nu/lr ! an_p*(1 + 1/re_p)
     lambda(3) = 0.d0    
 
   END FUNCTION FOS_eigenvalues
@@ -129,7 +129,7 @@ CONTAINS
     REAL(KIND=8), DIMENSION(3,3) :: RR
     !-------------------------------------------
 
-    REAL(KIND=8) :: an, an_m, an_p, Re_m, Re_p, LR
+    REAL(KIND=8) :: An, An_m, An_p, Re_m, Re_p, Lr
     !---------------------------------------------
     
     an = DOT_PRODUCT(a, n)
@@ -137,12 +137,12 @@ CONTAINS
     an_m = MIN(0.d0, an)
     an_p = MAX(0.d0, an)
 
-    LR = FOS_Characteristic_length(a, nu)
+    Lr = fos_characteristic_length(a, nu)
 
-    Re_m = an_m * LR / nu
-    Re_p = an_p * LR / nu
+    Re_m = an_m * Lr / nu
+    Re_p = an_p * Lr / nu
    
-    RR(1, :) = (/ LR/(Re_p + 1.d0), LR/(Re_m - 1.d0), 0.d0 /)
+    RR(1, :) = (/ Lr/(Re_p + 1.d0), Lr/(Re_m - 1.d0), 0.d0 /)
     RR(2, :) = (/ n(1),             n(1),            -n(2) /)
     RR(3, :) = (/ n(2),             n(2),             n(1) /)
 
@@ -156,7 +156,7 @@ CONTAINS
     IMPLICIT NONE
 
     REAL(KIND=8), DIMENSION(:), INTENT(IN) :: a
-    REAL(KIND=8),               INTENT(IN) :: nu
+    REAL(KIND=8), INTENT(IN) :: nu
     REAL(KIND=8), DIMENSION(:), INTENT(IN) :: n
 
     REAL(KIND=8), DIMENSION(3,3) :: LL
@@ -178,7 +178,7 @@ CONTAINS
     
     LL(1, :) = (/ (Re_a + 1.d0)/LR, (1.d0 + Re_p)*n(1), (1.d0 + Re_p)*n(2) /)
     LL(2, :) = (/-(Re_a + 1.d0)/LR, (1.d0 - Re_m)*n(1), (1.d0 - Re_m)*n(2) /)
-    LL(3, :) = (/ 0.d0            , -n(2)             , n(1)               /)
+    LL(3, :) = (/ 0.d0 , -n(2) , n(1) /)
 
     LL = LL / ( Re_a + 2.d0 )
 
@@ -186,24 +186,24 @@ CONTAINS
   !=================================
 
   !======================================
-  FUNCTION FOS_Jacobian(a, nu) RESULT(AA)
+  FUNCTION FOS_JACOBIAN(A, NU) RESULT(AA)
   !======================================
 
     IMPLICIT NONE
 
-    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: a
-    REAL(KIND=8),               INTENT(IN) :: nu
+    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: A
+    REAL(KIND=8),               INTENT(IN) :: NU
 
-    REAL(KIND=8), DIMENSION(3,3, N_dim) :: AA
+    REAL(KIND=8), DIMENSION(3,3, N_DIM) :: AA
     !-------------------------------------------
 
-    REAL(KIND=8) :: TR, LR, mod_a
+    REAL(KIND=8) :: TR, LR, MOD_A
     !-------------------------------------------
 
-    mod_a = SQRT(SUM(a**2))
+    MOD_A = SQRT(SUM(A**2))
 
-    LR = FOS_Characteristic_length(a, nu)
-    TR = LR/(mod_a + nu/LR)
+    LR = FOS_CHARACTERISTIC_LENGTH(A, NU)
+    TR = LR/(MOD_A + NU/LR)
 
     ! A_x
     !--------------------------------------
