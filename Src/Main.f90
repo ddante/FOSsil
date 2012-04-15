@@ -1,9 +1,24 @@
 PROGRAM main
+ 
+ !                                     __                      !
+ !                                    /._)                     !
+ !                           _.----._/ /                       !
+ !                          /         /                        !
+ !                       __/ (  | (  |                         !
+ !                      /__.-'|_|--|_|                         !            
+ !                *^^^^^^^--^^---^-----^^^^^^^*                !
+ !                *            FOSsil         *                !
+ !                                                             !
+ !  High order solution of the 2D scalar advection-diffusion   !
+ !  equation by the First Order System on triangle/quadrangle  !
+ !  and hybrid meshes.                                         !
+ !                                                             !
+ !  D. De Santis                                               !
 
   USE init_problem,      ONLY: read_param, initialization, order, &
-                               ite_max, toll_res
+                               ite_max, toll_res, mesh_format
 
-  USE geometry,          ONLY: read_gmshMesh, read_MeshFBx, init_elements
+  USE geometry,          ONLY: read_Mesh, init_elements
 
   USE time_integration
   USE post_pro
@@ -40,8 +55,7 @@ PROGRAM main
 
   ! File mesh
   UNIT = 2
-  CALL read_gmshMesh(UNIT, mesh_file)
-! CALL read_MeshFBx (UNIT, mesh_file)
+  CALL read_Mesh(UNIT, mesh_file, mesh_format)
 
   !---------------
   ! Pre-processing

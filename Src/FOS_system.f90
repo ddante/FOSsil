@@ -39,46 +39,46 @@ CONTAINS
     a = advection_speed(type_pb, u, x, y)
     mod_a = DSQRT(SUM(a**2))
     
-    LR = FOS_Characteristic_length(a, nu)
-    TR = LR/(mod_a + nu/LR)
+    Lr = FOS_Characteristic_length(a, nu)
+    Tr = Lr/(mod_a + nu/Lr)
     
     ff(1, :) = (/  a(1)*u - nu*p,  a(2)*u - nu*q /)
-    ff(2, :) = (/ -u/TR,           0.d0          /)
-    ff(3, :) = (/  0.d0,          -u/TR          /)
+    ff(2, :) = (/ -u/Tr,           0.d0          /)
+    ff(3, :) = (/  0.d0,          -u/Tr          /)
 
   END FUNCTION FOS_advection_flux
   !==============================
 
   !====================================================
-  FUNCTION FOS_SOURCE(TYPE_PB, UU, NU, X, Y) RESULT(SS)
+  FUNCTION fos_source(type_pb, uu, nu, x, y) RESULT(ss)
   !====================================================
 
     IMPLICIT NONE
     
-    INTEGER,                    INTENT(IN) :: TYPE_PB
-    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: UU
-    REAL(KIND=8),               INTENT(IN) :: NU
-    REAL(KIND=8),               INTENT(IN) :: X, Y
+    INTEGER,                    INTENT(IN) :: type_pb
+    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: uu
+    REAL(KIND=8),               INTENT(IN) :: nu
+    REAL(KIND=8),               INTENT(IN) :: x, y
     
     REAL(KIND=8), DIMENSION(SIZE(UU)) :: SS
     !---------------------------------------------
 
     REAL(KIND=8), DIMENSION(N_DIM) :: A
 
-    REAL(KIND=8) :: U, P, Q, TR, LR, MOD_A
+    REAL(KIND=8) :: u, p, q, Tr, Lr, mod_a
     !---------------------------------------------
 
-    U = UU(1); P = UU(2); Q = UU(3)
+    u = uu(1); p = uu(2); q = uu(3)
 
-    A = ADVECTION_SPEED(TYPE_PB, U, X, Y)
-    MOD_A = SQRT(SUM(A**2))
+    a = advection_speed(type_pb, u, x, y)
+    mod_a = DSQRT(SUM(a**2))
 
-    LR = FOS_CHARACTERISTIC_LENGTH(A, NU)
-    TR = LR/(MOD_A + NU/LR)
+    Lr = fos_characteristic_length(a, nu)
+    Tr = Lr/(mod_a + nu/Lr)
 
-    SS(1) = SOURCE_TERM(TYPE_PB, U, NU, X, Y)    
-    SS(2) = -P/TR
-    SS(3) = -Q/TR
+    ss(1) = source_term(type_pb, u, nu, x, y)    
+    ss(2) = -p/Tr
+    ss(3) = -q/Tr
 
   END FUNCTION FOS_SOURCE
   !======================
@@ -178,7 +178,7 @@ CONTAINS
     
     LL(1, :) = (/ (Re_a + 1.d0)/LR, (1.d0 + Re_p)*n(1), (1.d0 + Re_p)*n(2) /)
     LL(2, :) = (/-(Re_a + 1.d0)/LR, (1.d0 - Re_m)*n(1), (1.d0 - Re_m)*n(2) /)
-    LL(3, :) = (/ 0.d0 , -n(2) , n(1) /)
+    LL(3, :) = (/ 0.d0 ,            -n(2),              n(1)               /)
 
     LL = LL / ( Re_a + 2.d0 )
 
@@ -186,36 +186,36 @@ CONTAINS
   !=================================
 
   !======================================
-  FUNCTION FOS_JACOBIAN(A, NU) RESULT(AA)
+  FUNCTION FOS_Jacobian(a, nu) RESULT(AA)
   !======================================
 
     IMPLICIT NONE
 
-    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: A
-    REAL(KIND=8),               INTENT(IN) :: NU
+    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: a
+    REAL(KIND=8),               INTENT(IN) :: nu
 
-    REAL(KIND=8), DIMENSION(3,3, N_DIM) :: AA
+    REAL(KIND=8), DIMENSION(3,3, N_dim) :: AA
     !-------------------------------------------
 
-    REAL(KIND=8) :: TR, LR, MOD_A
+    REAL(KIND=8) :: Tr, Lr, mod_a
     !-------------------------------------------
 
-    MOD_A = SQRT(SUM(A**2))
+    mod_a = DSQRT(SUM(a**2))
 
-    LR = FOS_CHARACTERISTIC_LENGTH(A, NU)
-    TR = LR/(MOD_A + NU/LR)
+    Lr = fos_characteristic_length(a, nu)
+    Tr = Lr/(mod_a + nu/Lr)
 
-    ! A_x
+    ! a_x
     !--------------------------------------
     AA(1,:, 1) = (/ a(1),    -nu,   0.d0 /)
-    AA(2,:, 1) = (/-1.d0/TR,  0.d0, 0.d0 /)
+    AA(2,:, 1) = (/-1.d0/Tr,  0.d0, 0.d0 /)
     AA(3,:, 1) = (/ 0.d0,     0.d0, 0.d0 /)
 
-    ! A_y
+    ! a_y
     !--------------------------------------
     AA(1,:, 2) = (/ a(2),    0.d0, -nu   /)
     AA(2,:, 2) = (/ 0.d0,    0.d0,  0.d0 /)
-    AA(3,:, 2) = (/-1.d0/TR, 0.d0,  0.d0 /)
+    AA(3,:, 2) = (/-1.d0/Tr, 0.d0,  0.d0 /)
 
   END FUNCTION FOS_Jacobian
   !======================== 
@@ -223,7 +223,11 @@ CONTAINS
   !==================================================
   FUNCTION FOS_Characteristic_length(a, nu) RESULT(L)
   !==================================================
-
+  !
+  ! H. Nishikawa: A first-order system approach for
+  ! diffusion equation. II: Unification of advection 
+  ! and diffusion. JCP 2010.
+  !
     IMPLICIT NONE
 
     REAL(KIND=8), DIMENSION(:), INTENT(IN) :: a

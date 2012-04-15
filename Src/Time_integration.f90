@@ -93,7 +93,7 @@ CONTAINS
     WRITE(*, *)
 
 500 FORMAT(I6, 3F24.16)      
-600 FORMAT('Iteration # ', I5, '    uu min = ', F10.6, ', uu max =', F10.6)
+600 FORMAT('Iteration # ', I6, ';   uu min = ', F10.6, ', uu max =', F10.6)
 601 FORMAT('Residual   = ', 3(E12.5, ' | ') )
 602 FORMAT('Residual_0 = ', 3(E12.5, ' | ') )
 

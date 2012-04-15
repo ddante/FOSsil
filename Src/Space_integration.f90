@@ -4,17 +4,23 @@ MODULE space_integration
 
   USE geometry,       ONLY: N_dim, N_dofs, N_elements, elements
 
-  USE init_problem,   ONLY: order, pb_type, visc, CFL, N_eqn
+  USE init_problem,   ONLY: order, pb_type, bc_type, &
+                            visc, CFL, N_eqn
 
-  USE models,         ONLY: advection_flux, diffusion_flux, &
-                            advection_speed, strong_bc,     &
-                            exact_solution, exact_grad
+  USE models,         ONLY: advection_flux, advection_speed, &
+                            strong_bc, exact_solution, exact_grad
   USE FOS_system
   USE Num_scheme
 
   IMPLICIT NONE
 
   PRIVATE  
+
+  !==========================================
+  INTEGER, PARAMETER :: STRONG_BC_TYPE = 0, &
+                          WEAK_BC_TYPE = 1
+  !==========================================
+
   PUBLIC :: compute_rhs
 
 CONTAINS
@@ -77,14 +83,26 @@ CONTAINS
 
     Dt_V = CFL/DT_V
 
-    !---------------------
-    ! Impose strong bc 
-    ! RHS = 0 on the inlet
+    !---------------------------
+    ! Impose boundary conditions
     !-------------------------------------
-    !CALL strong_bc(pb_type, visc, uu, rhs)
+    SELECT CASE(bc_type)
 
-    ! weak bc
-    rhs = rhs + Res_weak_bc(uu)
+    CASE(STRONG_BC_TYPE)
+
+       CALL strong_bc(pb_type, visc, uu, rhs)
+
+    CASE(WEAK_BC_TYPE)
+
+       rhs = rhs + Res_weak_bc(uu)
+
+    CASE DEFAULT
+
+       WRITE(*,*) 'ERROR: unknown boundary condition method'
+       STOP
+
+    END SELECT
+    
 
   END SUBROUTINE compute_rhs
   !=========================
@@ -187,7 +205,11 @@ CONTAINS
   !=====================================
   FUNCTION Res_weak_bc(uu) RESULT(res_b)
   !=====================================
-
+  !
+  ! Impose the boundary conditions as 
+  ! inflow/outflow type. The inflow/outflow
+  ! state is the exact solution: (u, p, q)
+  !
     IMPLICIT NONE
 
     REAL(KIND=8), DIMENSION(:,:), INTENT(IN) :: uu
@@ -252,8 +274,8 @@ CONTAINS
 
                 a_q = advection_speed(pb_type, u_q(1), xy(1, iq), xy(2, iq))
 
-                u_ex(1)   = exact_solution(pb_type, xy(:, iq), visc)
-                u_ex(2:3) = exact_grad(pb_type, xy(:, iq), visc)
+                u_ex(1)   = exact_solution(pb_type, xy(:, iq), visc) ! u
+                u_ex(2:3) = exact_grad(pb_type, xy(:, iq), visc)     ! p, q
 
                 lambda = FOS_eigenvalues(a_q, visc, n(:,iq))
                 RR = FOS_right_eigenvectors(a_q, visc, n(:,iq))

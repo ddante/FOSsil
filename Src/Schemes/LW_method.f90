@@ -50,7 +50,7 @@ CONTAINS
 
     REAL(KIND=8), DIMENSION(N_dim) :: v_n, a_m, a_q
 
-    REAL(KIND=8) :: x_m, y_m, u_m, r_N_dofs, mod_n
+    REAL(KIND=8) :: x_m, y_m, u_m, r_N_dofs, mod_n, l_max
 
     INTEGER :: i, j, iq, id, N_dofs, N_verts
     !--------------------------------------------------
@@ -88,17 +88,22 @@ CONTAINS
        RR = FOS_right_eigenvectors(a_m, visc, v_n)
        LL = FOS_left_eigenvectors(a_m, visc, v_n)
 
-       PP = 0.d0
+       PP = 0.d0; l_max = 0.d0
        DO j = 1, N_eqn
-          !PP(j, j) = MAX(0.d0, lambda(j))*mod_n
+
+         !PP(j, j) = MAX(0.d0, lambda(j))*mod_n
           PP(j, j) = ABS(lambda(j))*mod_n
+
+          l_max = MAX( l_max, &
+                       MAX(0.d0, lambda(j))*mod_n )
+
        ENDDO
 
        Tau_ = Tau_ + 0.5d0 * MATMUL(RR, MATMUL(PP, LL))
 
        ! Time step
-       !inv_dt = MAX(inv_dt,  0.5d0*PP(2,2))
-       inv_dt = MAX( inv_dt,  MAXVAL(ABS(PP)) )
+      !inv_dt = MAX( inv_dt,  MAXVAL(ABS(PP)) )
+       inv_dt = MAX(inv_dt, l_max)
 
     ENDDO
 

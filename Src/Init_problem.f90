@@ -11,6 +11,8 @@ MODULE init_problem
   CHARACTER(len=64) :: pb_name
   INTEGER           :: order
   INTEGER           :: scheme_type
+  INTEGER           :: bc_type
+  INTEGER           :: mesh_format
   INTEGER           :: time_int
   INTEGER           :: pb_type
   INTEGER           :: ite_max
@@ -24,9 +26,10 @@ MODULE init_problem
   !=======================================
   
   PUBLIC :: read_param, initialization
-  PUBLIC :: pb_name, order, time_int,   &
-            scheme_type, pb_type, visc, &
-            CFL, ite_max, toll_res, N_eqn
+  PUBLIC :: pb_name, order, time_int,    &
+            scheme_type, mesh_format,    &
+            pb_type, bc_type, visc, CFL, &
+            ite_max, toll_res, N_eqn
   !=======================================
 
 CONTAINS
@@ -110,7 +113,9 @@ CONTAINS
     READ(unit, *) pb_name
     READ(unit, *) order
     READ(unit, *) scheme_type
+    READ(unit, *) mesh_format
     READ(unit, *) time_int
+    READ(unit, *) bc_type
     READ(unit, *) pb_type
     READ(unit, *) ite_max
     READ(unit, *) toll_res
@@ -120,15 +125,17 @@ CONTAINS
     CLOSE (unit)
       
     WRITE(*,*)
-    WRITE(*,*) 'Problem name: ', pb_name
-    WRITE(*,*) 'Order:', order
-    WRITE(*,*) 'Num scheme:', scheme_type
-    WRITE(*,*) 'Time integration:', time_int
-    WRITE(*,*) 'Problem type:', pb_type
-    WRITE(*,*) 'Ite max:', ite_max
-    WRITE(*,*) 'Residual:', toll_res
-    WRITE(*,*) 'CFL:', CFL
-    WRITE(*,*) 'Viscosity', visc
+    WRITE(*,*) 'Problem name: ',                   pb_name
+    WRITE(*, '(" Order: " I2)')                    order
+    WRITE(*, '(" Num scheme: " I2)')               scheme_type
+    WRITE(*, '(" Mesh Format: " I2)')              mesh_format
+    WRITE(*, '(" Time integration: " I2)')         time_int
+    WRITE(*, '(" Boundary conditions type: " I2)') bc_type
+    WRITE(*, '(" Problem type: " I2)')             pb_type
+    WRITE(*, '(" Max Num. iterations: " I8)')      ite_max
+    WRITE(*, '(" Residual tollerance: " E10.5)')   toll_res
+    WRITE(*, '(" CFL Number: " F10.5)')            CFL
+    WRITE(*, '(" Viscosity coefficient: " F10.5)') visc
    
   END SUBROUTINE read_param
   !========================

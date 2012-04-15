@@ -2,7 +2,7 @@ MODULE geometry
 
   USE Trianlge_Class
   USE Quadrangle_Class
-  
+
   IMPLICIT NONE
   PRIVATE
 
@@ -39,9 +39,13 @@ MODULE geometry
   INTEGER, PARAMETER :: GMSH_TRIANGLE   = 2
   INTEGER, PARAMETER :: GMSH_QUADRANGLE = 3
   INTEGER, PARAMETER :: GMSH_POINT      = 15
+  !----------------------------------------------------------
+
+  INTEGER, PARAMETER :: GMSH_MESH = 1, &
+                        EMC2_MESH = 2
   !==========================================================
 
-  PUBLIC :: read_gmshMesh, read_MeshFBx, Init_Elements
+  PUBLIC :: read_Mesh, Init_Elements
   PUBLIC :: N_dim, N_dofs, N_elements, elements
   !==========================================================
 
@@ -603,8 +607,9 @@ CONTAINS
      ENDIF
     
      WRITE(*,*)
-     WRITE(*,*) 'Number of domain segments: ',found_seg
-     WRITE(*,*) 'Number of boundary segments: ',found_segb
+     WRITE(*, '("Number of domain segments: ", I5)')   found_seg
+     WRITE(*, '("Number of boundary segments: ", I4)') found_segb
+     WRITE(*,*)
 
      !
      !---------------------------------------------------------------------------
@@ -719,6 +724,38 @@ CONTAINS
   END SUBROUTINE find_segments
   !===========================
 
+
+  !=================================================
+  SUBROUTINE read_Mesh(unit, mesh_file, mesh_format)
+  !=================================================
+
+    IMPLICIT NONE
+
+    INTEGER,           INTENT(IN) :: unit
+    CHARACTER(len=64), INTENT(IN) :: mesh_file
+    INTEGER,           INTENT(IN) :: mesh_format
+    !-------------------------------------------
+
+    SELECT CASE(mesh_format)
+
+    CASE(GMSH_MESH)
+
+       CALL read_gmshMesh(unit, mesh_file)
+
+    CASE(EMC2_MESH)
+
+       CALL read_MeshEMC2(unit, mesh_file)
+
+    CASE DEFAULT
+
+       WRITE(*,*) 'ERROR: Mesh format not supported'
+       STOP
+
+    END SELECT
+
+  END SUBROUTINE read_Mesh
+  !=======================  
+  
   !========================================
   SUBROUTINE read_gmshMesh(unit, mesh_file)
   !========================================
@@ -867,9 +904,9 @@ CONTAINS
   END SUBROUTINE read_gmshMesh
   !===========================
 
-  !=======================================
-  SUBROUTINE read_MeshFBx(unit, mesh_file)
-  !=======================================
+  !========================================
+  SUBROUTINE read_MeshEMC2(unit, mesh_file)
+  !========================================
 
     IMPLICIT NONE
 
@@ -959,7 +996,7 @@ CONTAINS
 
     CLOSE(unit)
 
-  END SUBROUTINE read_MeshFBx
-  !==========================  
+  END SUBROUTINE read_MeshEMC2
+  !=========================== 
   
 END MODULE geometry

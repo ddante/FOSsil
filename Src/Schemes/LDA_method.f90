@@ -45,6 +45,11 @@ CONTAINS
     !---------------------------------------------------
 
     Ns = ele%N_points; r_Ns = REAL(Ns, 8)
+
+    IF( Ns /= 3 ) THEN
+       WRITE(*,*) 'ERROR: LDA with P1 triangles only'
+       STOP
+    ENDIF
     
     !-----------
     ! Mean state

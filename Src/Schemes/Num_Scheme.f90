@@ -2,7 +2,7 @@ MODULE Num_scheme
 
   USE element_class
   USE init_problem,   ONLY: scheme_type
-!  USE LLxFS_method
+  USE LLxFS_method
   USE LW_method
   USE LDA_method
 
@@ -42,8 +42,8 @@ CONTAINS
       
     CASE(LLXFS)
        
-!       CALL LLxFS_scheme(ele, Phi_tot, u, D_u, Phi_i, inv_dt)
-       STOP
+       CALL LLxFS_scheme(ele, Phi_tot, u, Phi_i, inv_dt)
+
     CASE(LW)
        
        CALL LW_scheme(ele, Phi_tot, u, Phi_i, inv_dt)
