@@ -244,7 +244,7 @@ CONTAINS
 
     ENDDO
 
-    DEALLOCATE(idc, idm)
+    DEALLOCATE(idc, idm, MM)
     
   END SUBROUTINE LDA_scheme_imp
   !============================

@@ -81,12 +81,12 @@ CONTAINS
        CALL LDA_scheme_imp(ele, Phi_tot, u, J_tot, Phi_i, inv_dt)
       
     CASE(LLXFS)
-stop       
-       !CALL LLxFS_scheme_imp(ele, Phi_tot, u, Phi_i, inv_dt)
+
+       CALL LLxFS_scheme_imp(ele, Phi_tot, u, J_tot, Phi_i, inv_dt)
 
     CASE(LW)
-stop       
-       !CALL LW_scheme_imp(ele, Phi_tot, u, Phi_i, inv_dt)
+
+       CALL LW_scheme_imp(ele, Phi_tot, u, J_tot, Phi_i, inv_dt)
 
     CASE DEFAULT
 
