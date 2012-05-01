@@ -46,7 +46,7 @@ MODULE geometry
   !==========================================================
 
   PUBLIC :: read_Mesh, Init_Elements
-  PUBLIC :: N_dim, N_dofs, N_elements, elements
+  PUBLIC :: N_dim, N_dofs, N_elements, elements, N_seg
   !==========================================================
 
 CONTAINS
@@ -70,7 +70,7 @@ CONTAINS
 
     INTEGER :: Nv, i, j, jq, jt, is1, is2, istat
     !-----------------------------------------------------
-
+ 
     jq = 0
 
     CALL find_segments()
@@ -223,7 +223,7 @@ CONTAINS
     CALL loc2loc_connectivity()
 
     DEALLOCATE( ele, edge_ele, rr_nodes )
-    
+
   END SUBROUTINE Init_Elements
   !===========================
 

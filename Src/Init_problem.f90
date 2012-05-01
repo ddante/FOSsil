@@ -2,6 +2,7 @@ MODULE init_problem
 
   USE Geometry,       ONLY: N_dofs, elements,  N_elements
   USE Models,         ONLY: strong_bc
+  USE petsc_driver,   ONLY: init_petsc
 
   IMPLICIT NONE
 
@@ -21,6 +22,8 @@ MODULE init_problem
   REAL(KIND=8)      :: visc
 
   INTEGER :: N_eqn
+
+  REAL(KIND=8) :: R_0, R_1, CFL_l
   !=======================================
 
   !=======================================
@@ -29,7 +32,8 @@ MODULE init_problem
   PUBLIC :: pb_name, order, time_int,    &
             scheme_type, mesh_format,    &
             pb_type, bc_type, visc, CFL, &
-            ite_max, toll_res, N_eqn
+            ite_max, toll_res, N_eqn,    &
+            CFL_l, R_0, R_1
   !=======================================
 
 CONTAINS
@@ -85,6 +89,17 @@ CONTAINS
          STOP
       ENDIF     
       CLOSE (UNIT)
+
+      ! Implicit scheme
+      IF(time_int == 1) THEN
+
+         CALL init_petsc(N_eqn)
+
+         R_0 = 1.d0; R_1 = 1.d0
+
+         CFL_l = CFL
+
+      ENDIF
    
    END SUBROUTINE initialization
    !============================

@@ -22,6 +22,7 @@ PROGRAM main
 
   USE time_integration
   USE post_pro
+  USE petsc_driver,      ONLY: finalize_petsc
 
   IMPLICIT NONE
 
@@ -106,6 +107,8 @@ CONTAINS
 
     IF( ALLOCATED(uu) )  DEALLOCATE( uu )
     IF( ALLOCATED(rhs) ) DEALLOCATE( rhs )
+
+    CALL finalize_petsc()
 
   END SUBROUTINE FinalizeCode
   !==========================  

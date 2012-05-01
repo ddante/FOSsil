@@ -11,7 +11,7 @@ MODULE FOS_system
 
   PUBLIC :: FOS_advection_flux, FOS_source, &
             FOS_eigenvalues, FOS_right_eigenvectors, &
-            FOS_left_eigenvectors, FOS_Jacobian, FOS_J_source
+            FOS_left_eigenvectors, FOS_Jacobian
 
 CONTAINS
 
@@ -50,7 +50,7 @@ CONTAINS
   !==============================
 
   !====================================================
-  FUNCTION FOS_source(type_pb, uu, nu, x, y) RESULT(SS)
+  FUNCTION fos_source(type_pb, uu, nu, x, y) RESULT(ss)
   !====================================================
 
     IMPLICIT NONE
@@ -60,10 +60,10 @@ CONTAINS
     REAL(KIND=8),               INTENT(IN) :: nu
     REAL(KIND=8),               INTENT(IN) :: x, y
     
-    REAL(KIND=8), DIMENSION(SIZE(uu)) :: SS
+    REAL(KIND=8), DIMENSION(SIZE(UU)) :: SS
     !---------------------------------------------
 
-    REAL(KIND=8), DIMENSION(N_dim) :: A
+    REAL(KIND=8), DIMENSION(N_DIM) :: A
 
     REAL(KIND=8) :: u, p, q, Tr, Lr, mod_a
     !---------------------------------------------
@@ -80,42 +80,8 @@ CONTAINS
     ss(2) = -p/Tr
     ss(3) = -q/Tr
 
-  END FUNCTION FOS_source
+  END FUNCTION FOS_SOURCE
   !======================
-
-  !=======================================================
-  FUNCTION FOS_J_source(type_pb, uu, nu, x, y) RESULT(J_S)
-  !=======================================================
-
-    IMPLICIT NONE
-    
-    INTEGER,                    INTENT(IN) :: type_pb
-    REAL(KIND=8), DIMENSION(:), INTENT(IN) :: uu
-    REAL(KIND=8),               INTENT(IN) :: nu
-    REAL(KIND=8),               INTENT(IN) :: x, y
-    
-    REAL(KIND=8), DIMENSION(SIZE(uu), SIZE(uu)) :: J_S
-    !-------------------------------------------------
-
-    REAL(KIND=8), DIMENSION(N_dim) :: A
-
-    REAL(KIND=8) :: u, p, q, Tr, Lr, mod_a
-    !---------------------------------------------
-
-    u = uu(1); p = uu(2); q = uu(3)
-
-    a = advection_speed(type_pb, u, x, y)
-    mod_a = DSQRT(SUM(a**2))
-
-    Lr = fos_characteristic_length(a, nu)
-    Tr = Lr/(mod_a + nu/Lr)
-
-    J_S(1, :) = 0.d0 ! To be fixed
-    J_S(2, :) = (/ 0.d0, -1.d0/Tr,  0.d0    /)
-    J_S(3, :) = (/ 0.d0,  0.d0,    -1.d0/Tr /)
-
-  END FUNCTION FOS_J_source
-  !========================
 
   !================================================
   FUNCTION FOS_eigenvalues(a, nu, n) RESULT(lambda)

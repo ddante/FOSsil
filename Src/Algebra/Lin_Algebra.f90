@@ -3,7 +3,9 @@ MODULE Lin_Algebra
   IMPLICIT NONE
   PRIVATE
 
-  PUBLIC :: Cross_Product, inverse, determinant
+  PUBLIC :: Cross_Product, &
+            inverse, determinant, &
+            Identity_matrix
 
 CONTAINS
 
@@ -150,5 +152,30 @@ CONTAINS
 
    END FUNCTION determinant 
    !=======================
+
+   !=====================================
+   FUNCTION Identity_matrix(n) RESULT(II)
+   !=====================================
+
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: n
+
+     REAL(KIND=8), DIMENSION(n,n) :: II
+     !----------------------------------
+
+     INTEGER :: k
+     !----------------------------------
+
+     II = 0.d0
+     
+     DO k = 1, n
+
+        II(k,k) = 1.d0
+
+     ENDDO
+
+   END FUNCTION Identity_matrix
+   !===========================   
 
 END MODULE Lin_Algebra
