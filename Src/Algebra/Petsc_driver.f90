@@ -39,55 +39,93 @@ CONTAINS
     !----------------------------
 
     INTEGER, DIMENSION(:), ALLOCATABLE :: nnz
-    LOGICAL, DIMENSION(:), ALLOCATABLE :: seen_face
-    INTEGER, DIMENSION(:), ALLOCATABLE :: idx
+
+    INTEGER, DIMENSION(N_eqn) :: idx
 
     INTEGER, DIMENSION(:), POINTER :: Nu
 
-    INTEGER :: je, k, i
-    !------------------------------------------
+    INTEGER :: je, k, i, j, Ns, n
+    !-----------------------------------------------
+    
+    TYPE :: con_Nu
+       INTEGER, DIMENSION(:), ALLOCATABLE :: con
+    END TYPE con_Nu
+    TYPE(con_NU), DIMENSION(N_dofs) :: nn_Nu
+
+    INTEGER, DIMENSION(:), ALLOCATABLE :: temp
+
+    LOGICAL :: find
+    !-----------------------------------------------
 
     PetscReal :: r_tol, a_tol, d_tol
     PetscInt :: max_res, max_ite
 
     PetscErrorCode :: ierr
-    !------------------------------------------
+    !-----------------------------------------------
 
     ! Count the #non-zero elements for each row
-    ALLOCATE( nnz(N_dofs*N_eqn) ); nnz = 0
-    ALLOCATE(  seen_face(N_seg) ); seen_face = .FALSE.
+    ALLOCATE( nnz(N_dofs*N_eqn) )
 
     DO je = 1, N_elements
+       
+       Ns = elements(je)%p%N_points
+       Nu => elements(je)%p%Nu
 
-       DO k = 1, elements(je)%p%N_faces
+       DO i = 1, Ns
 
-          Nu => elements(je)%p%faces(k)%f%NU
+          IF( .NOT. ALLOCATED(nn_Nu(Nu(i))%con) ) THEN
 
-          IF( seen_face(elements(je)%p%faces(k)%f%g_seg) == .FALSE. ) THEN
+             ALLOCATE(nn_Nu(Nu(i))%con(Ns))
 
-             seen_face(elements(je)%p%faces(k)%f%g_seg) = .TRUE.
+             nn_Nu(Nu(i))%con = Nu
 
-             ALLOCATE( idx(SIZE(Nu)) )
-             
-             DO i = 1, N_eqn
+          ELSE
 
-                idx = N_eqn*(Nu - 1) + i
+             DO k = 1, Ns
 
-                nnz(idx) = nnz(idx) + 1
+                n = SIZE(nn_Nu(Nu(i))%con)
 
-             ENDDO
+                find = .FALSE.
 
-             DEALLOCATE( idx )
-             NULLIFY( Nu )
+                DO j = 1, n
 
-          ENDIF
+                   IF(nn_Nu(Nu(i))%con(j) == Nu(k)) THEN
+                      find = .TRUE.
+                      EXIT
+                   ENDIF
 
-       ENDDO
+                ENDDO
+
+                IF(.NOT. find) THEN
+
+                   ALLOCATE( temp(SIZE(nn_Nu(Nu(i))%con)) )
+                   temp = nn_Nu(Nu(i))%con
+
+                   DEALLOCATE( nn_Nu(Nu(i))%con )
+                     ALLOCATE( nn_Nu(Nu(i))%con(SIZE(temp)+1) )
+
+                   nn_Nu(Nu(i))%con = (/ temp, Nu(k) /)
+                      
+                   DEALLOCATE(temp)                      
+
+                ENDIF
+
+             ENDDO ! k <= #N_points
+
+          ENDIF ! Not allocated
+
+       ENDDO ! i <= #N_points
+
+    ENDDO ! je <= #elements
+
+
+    DO i = 1, N_dofs
+
+       idx = (/ (j, j = N_eqn*(i - 1) + 1, N_eqn*i) /)
+       nnz(idx) = SIZE(nn_Nu(i)%con)*N_eqn
 
     ENDDO
 
-    ! diagonal term and system
-    nnz = (nnz + 1)*N_eqn
 
     ! Init PETSC
     !---------------------------------------------
@@ -110,7 +148,7 @@ CONTAINS
 
     CALL VecDuplicate(b_rhs, x_sol, ierr)
 
-    DEALLOCATE( nnz, seen_face )
+    DEALLOCATE( nnz )
 
     ! Solver option
     !---------------------------------------------
@@ -150,6 +188,9 @@ CONTAINS
 
     call_petsc = .TRUE.
 
+    WRITE(*,*) 'Petsc initialized'
+    WRITE(*,*)
+
   END SUBROUTINE init_petsc
   !========================  
 
@@ -179,9 +220,9 @@ CONTAINS
     CALL MatAssemblyBegin(LHS, MAT_FINAL_ASSEMBLY, ierr)
     CALL MatAssemblyEnd(  LHS, MAT_FINAL_ASSEMBLY, ierr)
 
-    CALL MatSetOption(LHS,                               &
-                           MAT_NEW_NONZERO_LOCATION_ERR, &
-                      PETSC_TRUE, ierr)
+!!$    CALL MatSetOption(LHS,                               &
+!!$                           MAT_NEW_NONZERO_LOCATION_ERR, &
+!!$                      PETSC_TRUE, ierr)
 
     ! Assemby of rhs
     DO i = 1, N_dof

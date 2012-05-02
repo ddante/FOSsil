@@ -805,7 +805,7 @@ CONTAINS
     REAL(KIND=8) :: CFL_n
     !-----------------------------------------------
    
-    REAL(KIND=8), PARAMETER :: CFL_max = 10
+    REAL(KIND=8), PARAMETER :: CFL_max = 1.E20
     !-----------------------------------------------
 
     ! L2 res u

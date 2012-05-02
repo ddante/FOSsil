@@ -224,7 +224,7 @@ CONTAINS
 
     DEALLOCATE( ele, edge_ele, rr_nodes )
 
-    WRITE(*,*) 'Element initilized'
+    WRITE(*,*) 'Elements initilized'
 
   END SUBROUTINE Init_Elements
   !===========================
