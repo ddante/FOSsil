@@ -81,7 +81,7 @@ PROGRAM main
  
      ite = ite + 1
 
-     IF( MOD(ite, 5000) == 0.0 ) THEN
+     IF( MOD(ite, 1000) == 0.0 ) THEN
         CALL plot_procedure(uu)
         CALL compute_error(uu)
      ENDIF

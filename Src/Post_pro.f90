@@ -40,7 +40,7 @@ CONTAINS
     REAL(KIND=8), DIMENSION(N_dim, N_dofs) :: coord
     INTEGER,      DIMENSION(N_dofs)        :: Glo2Loc
 
-    REAL :: uu_ex
+    REAL(KIND=8) :: uu_ex
 
     INTEGER :: N_tri, N_qua, ns
     INTEGER :: UNIT, ierror, type, jt, j, k
@@ -277,10 +277,9 @@ CONTAINS
       ENDDO
 
       ! Normalize L2 error
-      err_L2 = SQRT(err_L2) / SQRT(int_uex)
+      err_L2 = DSQRT(err_L2) / DSQRT(int_uex)
 
       ! Error of the gradients
-
       CALL compute_gradient_error(uu, err_Gx_L2, err_Gy_L2)
 
       WRITE(*,*) ' *** COMPUTE THE ERROR ***'

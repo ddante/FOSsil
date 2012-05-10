@@ -76,7 +76,7 @@ CONTAINS
     Lr = fos_characteristic_length(a, nu)
     Tr = Lr/(mod_a + nu/Lr)
 
-    ss(1) = source_term(type_pb, u, nu, x, y)    
+    ss(1) = source_term(type_pb, u, nu, x, y)
     ss(2) = -p/Tr
     ss(3) = -q/Tr
 

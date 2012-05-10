@@ -815,7 +815,7 @@ CONTAINS
       !.............................
       SUBROUTINE bc_boundary_layer()
       !
-      ![0.1, 1.1]x[0, 0.5]
+      ![0.05, 1.05]x[0, 0.3]
       ! 
       IMPLICIT NONE
 
@@ -831,7 +831,22 @@ CONTAINS
          ENDDO
 
          DO k = 1, Nv
-            IF ( coord(2, k) == 0.5d0 ) THEN
+            IF ( coord(2, k) == 0.3d0 ) THEN
+
+               du_l = grad_bl(coord(1, k), coord(2, k), visc)
+
+               u_l(2, k) = du_l(1); rhs_l(2, k) = 0.d0
+
+               n_loc = n_loc + 1
+               is_loc(n_loc) = k
+               b_flag = .TRUE.
+            ENDIF
+         ENDDO
+
+         DO k = 1, Nv
+            IF ( coord(1, k) == 0.05d0 .AND. &
+                 coord(2, k) > 0.d0   .AND. &
+                 coord(2, k) < 0.3d0  ) THEN
 
                u_l(1, k) = u_ex_bl(coord(1, k), coord(2, k), visc); rhs_l(1, k) = 0.d0
 
@@ -842,22 +857,9 @@ CONTAINS
          ENDDO
 
          DO k = 1, Nv
-            IF ( coord(1, k) == 0.1d0 .AND. &
+            IF ( coord(1, k) == 1.05d0 .AND. &
                  coord(2, k) > 0.d0   .AND. &
-                 coord(2, k) < 0.5d0  ) THEN
-
-               u_l(1, k) = u_ex_bl(coord(1, k), coord(2, k), visc); rhs_l(1, k) = 0.d0
-
-               n_loc = n_loc + 1
-               is_loc(n_loc) = k
-               b_flag = .TRUE.
-            ENDIF
-         ENDDO
-
-         DO k = 1, Nv
-            IF ( coord(1, k) == 1.1d0 .AND. &
-                 coord(2, k) > 0.d0   .AND. &
-                 coord(2, k) < 0.5d0  ) THEN
+                 coord(2, k) < 0.3d0  ) THEN
 
                du_l = grad_bl(coord(1, k), coord(2, k), visc)
 

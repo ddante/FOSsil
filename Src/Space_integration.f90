@@ -805,11 +805,11 @@ CONTAINS
     REAL(KIND=8) :: CFL_n
     !-----------------------------------------------
    
-    REAL(KIND=8), PARAMETER :: CFL_max = 1.E20
+    REAL(KIND=8), PARAMETER :: CFL_max = 1.E+20
     !-----------------------------------------------
 
     ! L2 res u
-    R_0 = SQRT(SUM(rhs(1, :)**2)) / REAL(N_dofs,8)
+    R_0 = SQRT(SUM(rhs(2, :)**2)) / REAL(N_dofs,8)
    
     IF( R_1 > R_0 ) THEN
 
@@ -817,7 +817,7 @@ CONTAINS
 
     ELSE
 
-       CFL_n = MAX(10.d0*CFL_o,  CFL_o * R_1/R_0)
+       CFL_n = MAX(0.1d0*CFL_o,  CFL_o * R_1/R_0)
 
     ENDIF
 
